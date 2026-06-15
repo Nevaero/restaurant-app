@@ -7,7 +7,11 @@ namespace RestaurantApp.Infrastructure.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Menu> Menus => Set<Menu>();
+    public DbSet<MenuRecipe> MenuRecipes => Set<MenuRecipe>();
+    public DbSet<Recipe> Recipes => Set<Recipe>();
+    public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
     public DbSet<Ingredient> Ingredients => Set<Ingredient>();
+    public DbSet<Allergen> Allergens => Set<Allergen>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Shift> Shifts => Set<Shift>();
 
@@ -27,13 +31,53 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             b.Property(m => m.NutritionalInfo).HasMaxLength(4000);
         });
 
+        modelBuilder.Entity<MenuRecipe>(b =>
+        {
+            b.HasOne(mr => mr.Menu)
+                .WithMany(m => m.MenuRecipes)
+                .HasForeignKey(mr => mr.MenuId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(mr => mr.Recipe)
+                .WithMany()
+                .HasForeignKey(mr => mr.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Recipe>(b =>
+        {
+            b.Property(r => r.Name).IsRequired().HasMaxLength(120);
+            b.Property(r => r.Instructions).HasMaxLength(8000);
+        });
+
+        modelBuilder.Entity<RecipeIngredient>(b =>
+        {
+            b.Property(ri => ri.Quantity).HasColumnType("decimal(18,3)");
+            b.HasOne(ri => ri.Recipe)
+                .WithMany(r => r.Ingredients)
+                .HasForeignKey(ri => ri.RecipeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(ri => ri.Ingredient)
+                .WithMany()
+                .HasForeignKey(ri => ri.IngredientId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<Ingredient>(b =>
         {
             b.Property(i => i.Name).IsRequired().HasMaxLength(120);
             b.Property(i => i.Unit).IsRequired().HasMaxLength(20);
             b.Property(i => i.Quantity).HasColumnType("decimal(18,3)");
             b.Property(i => i.LowStockThreshold).HasColumnType("decimal(18,3)");
-            b.Property(i => i.Allergens).HasMaxLength(400);
+            // Normalized many-to-many with allergens.
+            b.HasMany(i => i.Allergens)
+                .WithMany(a => a.Ingredients)
+                .UsingEntity(j => j.ToTable("IngredientAllergens"));
+        });
+
+        modelBuilder.Entity<Allergen>(b =>
+        {
+            b.Property(a => a.Name).IsRequired().HasMaxLength(60);
+            b.HasIndex(a => a.Name).IsUnique();
         });
 
         modelBuilder.Entity<Employee>(b =>

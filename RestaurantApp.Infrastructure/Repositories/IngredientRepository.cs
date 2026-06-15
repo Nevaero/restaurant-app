@@ -8,16 +8,17 @@ namespace RestaurantApp.Infrastructure.Repositories;
 public class IngredientRepository(AppDbContext db) : IIngredientRepository
 {
     public Task<List<Ingredient>> GetAllAsync(CancellationToken ct = default) =>
-        db.Ingredients.OrderBy(i => i.Name).ToListAsync(ct);
+        db.Ingredients.Include(i => i.Allergens).OrderBy(i => i.Name).ToListAsync(ct);
 
     public Task<List<Ingredient>> GetLowStockAsync(CancellationToken ct = default) =>
         db.Ingredients
+            .Include(i => i.Allergens)
             .Where(i => i.Quantity < i.LowStockThreshold)
             .OrderBy(i => i.Name)
             .ToListAsync(ct);
 
     public Task<Ingredient?> GetByIdAsync(int id, CancellationToken ct = default) =>
-        db.Ingredients.FirstOrDefaultAsync(i => i.Id == id, ct);
+        db.Ingredients.Include(i => i.Allergens).FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public void Add(Ingredient ingredient) => db.Ingredients.Add(ingredient);
 

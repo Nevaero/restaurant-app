@@ -8,5 +8,6 @@ public class Ingredient
     public decimal Quantity { get; set; }                // quantity in stock
     public string Unit { get; set; } = string.Empty;     // "kg", "units", "liters"
     public decimal LowStockThreshold { get; set; }       // alert below this
-    public string Allergens { get; set; } = string.Empty; // comma-separated EU allergen labels
+
+    public ICollection<Allergen> Allergens { get; set; } = [];
 }

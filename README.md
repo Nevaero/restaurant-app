@@ -4,15 +4,21 @@ A lightweight restaurant ERP (MVP) built to showcase full-stack **.NET 8** skill
 an **ASP.NET Core Web API** backend with **EF Core / SQLite**, and a **Blazor
 WebAssembly** frontend.
 
-The homepage is a three-card grid leading to the three modules:
+The homepage is a card grid leading to the modules:
 
-- **Menu** — weekly menus. Each menu runs Monday–Sunday; you pick the Monday with a
-  date picker and give it a name, then edit its free-text content and nutritional values.
+- **Menu** — weekly menus (Monday–Sunday). You pick the Monday with a date picker, give it a
+  name, **load recipes onto days**, and **export the menu as an A4-landscape PDF** (a
+  Monday–Sunday grid with per-day recipes and aggregated allergens).
+- **Recipes** — a searchable recipe list with full CRUD. Recipes are built from inventory
+  ingredients (with quantities); their allergens roll up automatically from those ingredients.
 - **Planning** — the weekly staff schedule for cooks, clerks, servers and managers, with
   per-employee hours, labour cost and overtime alerts (informed by how tools like
   7shifts/Deputy structure schedules).
-- **Inventaire** (inventory) — ingredients with quantities, units, **allergens** (the EU's
-  14 major allergens) and low-stock alerts.
+- **Inventaire** (inventory) — ingredients with quantities, units, low-stock alerts and
+  **normalized allergens** (the EU's 14 major allergens, modelled as their own table and a
+  many-to-many relationship).
+
+Menu PDFs are generated server-side with **QuestPDF**.
 
 ## Tech stack
 
@@ -21,17 +27,19 @@ The homepage is a three-card grid leading to the three modules:
 | Backend API  | ASP.NET Core 8 Web API (controllers, `IResult`)  |
 | ORM          | Entity Framework Core 8 + SQLite                 |
 | Frontend     | Blazor WebAssembly (standalone)                  |
+| PDF export   | QuestPDF (Community licence)                     |
 | Tests        | xUnit + FluentAssertions                         |
 | Language     | C# 12                                            |
 
 ## Solution structure
 
 ```
-RestaurantApp.Core            Domain entities, repository interfaces, SchedulingService, WeekRules
+RestaurantApp.Core            Domain entities, repository interfaces, SchedulingService,
+                              AllergenSummary, WeekRules
 RestaurantApp.Infrastructure  EF Core DbContext, value converters, repositories, seeding, migrations
-RestaurantApp.Api             Web API controllers + record DTOs (Menus, Ingredients, Shifts, Employees)
-RestaurantApp.Web             Blazor WebAssembly UI (Menu, Planning, Inventaire)
-RestaurantApp.Tests           Unit tests for the scheduling rules and week handling
+RestaurantApp.Api             Web API controllers + record DTOs; QuestPDF menu export
+RestaurantApp.Web             Blazor WebAssembly UI (Menu, Recipes, Planning, Inventaire)
+RestaurantApp.Tests           Unit tests for scheduling, allergen aggregation and week handling
 ```
 
 The architecture is a clean, layered **Repository + Unit of Work** design — deliberately
@@ -44,6 +52,8 @@ dependencies.
   shift validation (no overlapping shifts for the same employee), and a weekly summary per
   employee (total hours, labour cost = hours × hourly rate, and an overtime flag above
   42 h/week). This is the primary unit-test target.
+- **`AllergenSummary`** (Core) — rolls allergens up the graph: from an ingredient's normalized
+  allergens to a recipe (distinct union of its ingredients), and from a recipe to a whole menu.
 - **`WeekRules`** (Core) — Monday-anchored week helpers. Menus and the planning grid both run
   Monday–Sunday; any date the user picks for a menu is snapped to that week's Monday.
 
@@ -97,8 +107,15 @@ dotnet test
 | GET    | `/api/menus` | List menus (summary) |
 | GET    | `/api/menus/{id}` | Get a menu with content |
 | POST   | `/api/menus` | Create a menu (week snapped to Monday) |
-| PUT    | `/api/menus/{id}` | Update a menu's name, week, content, nutrition |
+| PUT    | `/api/menus/{id}` | Update a menu (name, week, content, nutrition, recipe assignments) |
 | DELETE | `/api/menus/{id}` | Delete a menu |
+| GET    | `/api/menus/{id}/pdf` | Export the menu as an A4-landscape PDF |
+| GET    | `/api/recipes?search={term}` | Search recipes (by name, instructions or ingredient) |
+| GET    | `/api/recipes/{id}` | Get a recipe with ingredients + allergens |
+| POST   | `/api/recipes` | Create a recipe |
+| PUT    | `/api/recipes/{id}` | Update a recipe |
+| DELETE | `/api/recipes/{id}` | Delete a recipe |
+| GET    | `/api/allergens` | List the normalized allergens |
 | GET    | `/api/ingredients` | List inventory items |
 | GET    | `/api/ingredients/low-stock` | Items below their threshold |
 | GET    | `/api/ingredients/{id}` | Get an item |

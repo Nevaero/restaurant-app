@@ -7,6 +7,9 @@ namespace RestaurantApp.Web.Services;
 /// <summary>Typed wrapper over <see cref="HttpClient"/> for the RestaurantApp API.</summary>
 public class ApiClient(HttpClient http)
 {
+    /// <summary>Absolute URL for a menu's PDF (used as a download link target).</summary>
+    public string MenuPdfUrl(int menuId) => new Uri(http.BaseAddress!, $"api/menus/{menuId}/pdf").ToString();
+
     // Menus
     public async Task<List<MenuSummaryDto>> GetMenusAsync() =>
         await http.GetFromJsonAsync<List<MenuSummaryDto>>("api/menus") ?? [];
@@ -30,6 +33,37 @@ public class ApiClient(HttpClient http)
 
     public async Task DeleteMenuAsync(int id) =>
         (await http.DeleteAsync($"api/menus/{id}")).EnsureSuccessStatusCode();
+
+    // Recipes
+    public async Task<List<RecipeSummaryDto>> SearchRecipesAsync(string? search)
+    {
+        var url = string.IsNullOrWhiteSpace(search) ? "api/recipes" : $"api/recipes?search={Uri.EscapeDataString(search)}";
+        return await http.GetFromJsonAsync<List<RecipeSummaryDto>>(url) ?? [];
+    }
+
+    public async Task<RecipeDto?> GetRecipeAsync(int id) =>
+        await http.GetFromJsonAsync<RecipeDto>($"api/recipes/{id}");
+
+    public async Task<RecipeDto?> CreateRecipeAsync(CreateRecipeRequest request)
+    {
+        var response = await http.PostAsJsonAsync("api/recipes", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<RecipeDto>();
+    }
+
+    public async Task<RecipeDto?> UpdateRecipeAsync(int id, UpdateRecipeRequest request)
+    {
+        var response = await http.PutAsJsonAsync($"api/recipes/{id}", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<RecipeDto>();
+    }
+
+    public async Task DeleteRecipeAsync(int id) =>
+        (await http.DeleteAsync($"api/recipes/{id}")).EnsureSuccessStatusCode();
+
+    // Allergens
+    public async Task<List<AllergenDto>> GetAllergensAsync() =>
+        await http.GetFromJsonAsync<List<AllergenDto>>("api/allergens") ?? [];
 
     // Inventory
     public async Task<List<IngredientDto>> GetIngredientsAsync() =>

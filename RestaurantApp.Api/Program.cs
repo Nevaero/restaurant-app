@@ -1,6 +1,10 @@
-using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
+using RestaurantApp.Api.Services;
 using RestaurantApp.Infrastructure;
 using RestaurantApp.Infrastructure.Data;
+
+// QuestPDF Community licence (free for small businesses / open source).
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +21,7 @@ builder.Services.AddSwaggerGen(options =>
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? "Data Source=restaurant.db";
 builder.Services.AddInfrastructure(connectionString);
+builder.Services.AddScoped<MenuPdfService>();
 
 // Allow the standalone Blazor WebAssembly client to call the API during development.
 builder.Services.AddCors(options =>

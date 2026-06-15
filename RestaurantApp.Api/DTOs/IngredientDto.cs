@@ -6,7 +6,7 @@ public record IngredientDto(
     decimal Quantity,
     string Unit,
     decimal LowStockThreshold,
-    string Allergens,
+    IReadOnlyList<AllergenDto> Allergens,
     bool IsLow);
 
 public record CreateIngredientRequest(
@@ -14,11 +14,11 @@ public record CreateIngredientRequest(
     decimal Quantity,
     string Unit,
     decimal LowStockThreshold,
-    string Allergens);
+    IReadOnlyList<int> AllergenIds);
 
 public record UpdateIngredientRequest(
     string Name,
     decimal Quantity,
     string Unit,
     decimal LowStockThreshold,
-    string Allergens);
+    IReadOnlyList<int> AllergenIds);

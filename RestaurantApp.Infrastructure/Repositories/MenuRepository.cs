@@ -13,6 +13,15 @@ public class MenuRepository(AppDbContext db) : IMenuRepository
     public Task<Menu?> GetByIdAsync(int id, CancellationToken ct = default) =>
         db.Menus.FirstOrDefaultAsync(m => m.Id == id, ct);
 
+    public Task<Menu?> GetWithRecipesAsync(int id, CancellationToken ct = default) =>
+        db.Menus
+            .Include(m => m.MenuRecipes)
+            .ThenInclude(mr => mr.Recipe)
+            .ThenInclude(r => r.Ingredients)
+            .ThenInclude(ri => ri.Ingredient)
+            .ThenInclude(i => i.Allergens)
+            .FirstOrDefaultAsync(m => m.Id == id, ct);
+
     public void Add(Menu menu) => db.Menus.Add(menu);
 
     public void Remove(Menu menu) => db.Menus.Remove(menu);

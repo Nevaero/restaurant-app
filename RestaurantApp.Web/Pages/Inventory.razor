@@ -41,9 +41,9 @@ else
                     <td>@item.Unit</td>
                     <td class="text-end">@item.LowStockThreshold</td>
                     <td>
-                        @foreach (var a in SplitAllergens(item.Allergens))
+                        @foreach (var a in item.Allergens)
                         {
-                            <span class="badge bg-info text-dark me-1">@a</span>
+                            <span class="badge bg-info text-dark me-1">@a.Name</span>
                         }
                     </td>
                     <td>
@@ -93,13 +93,13 @@ else
                 <div class="mb-2">
                     <label class="form-label">Allergens</label>
                     <div class="d-flex flex-wrap gap-2">
-                        @foreach (var allergen in AllAllergens)
+                        @foreach (var allergen in allAllergens)
                         {
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="al-@allergen"
-                                       checked="@fAllergens.Contains(allergen)"
-                                       @onchange="e => ToggleAllergen(allergen, (bool)e.Value!)" />
-                                <label class="form-check-label" for="al-@allergen">@allergen</label>
+                                <input class="form-check-input" type="checkbox" id="al-@allergen.Id"
+                                       checked="@fAllergenIds.Contains(allergen.Id)"
+                                       @onchange="e => ToggleAllergen(allergen.Id, (bool)e.Value!)" />
+                                <label class="form-check-label" for="al-@allergen.Id">@allergen.Name</label>
                             </div>
                         }
                     </div>
@@ -118,14 +118,8 @@ else
 }
 
 @code {
-    // The EU's 14 major food allergens.
-    private static readonly string[] AllAllergens =
-    [
-        "Gluten", "Crustaceans", "Eggs", "Fish", "Peanuts", "Soybeans", "Milk",
-        "Nuts", "Celery", "Mustard", "Sesame", "Sulphites", "Lupin", "Molluscs"
-    ];
-
     private List<IngredientDto> items = [];
+    private List<AllergenDto> allAllergens = [];
     private bool loading = true;
     private string? error;
 
@@ -135,13 +129,14 @@ else
     private decimal fQuantity;
     private string fUnit = "kg";
     private decimal fThreshold;
-    private readonly HashSet<string> fAllergens = [];
+    private readonly HashSet<int> fAllergenIds = [];
     private string? formError;
 
-    protected override Task OnInitializedAsync() => LoadAsync();
-
-    private static IEnumerable<string> SplitAllergens(string allergens) =>
-        allergens.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    protected override async Task OnInitializedAsync()
+    {
+        allAllergens = await Api.GetAllergensAsync();
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -161,10 +156,10 @@ else
         }
     }
 
-    private void ToggleAllergen(string allergen, bool isChecked)
+    private void ToggleAllergen(int id, bool isChecked)
     {
-        if (isChecked) fAllergens.Add(allergen);
-        else fAllergens.Remove(allergen);
+        if (isChecked) fAllergenIds.Add(id);
+        else fAllergenIds.Remove(id);
     }
 
     private void ShowAddForm()
@@ -174,7 +169,7 @@ else
         fQuantity = 0;
         fUnit = "kg";
         fThreshold = 0;
-        fAllergens.Clear();
+        fAllergenIds.Clear();
         formError = null;
         showForm = true;
     }
@@ -186,9 +181,9 @@ else
         fQuantity = item.Quantity;
         fUnit = item.Unit;
         fThreshold = item.LowStockThreshold;
-        fAllergens.Clear();
-        foreach (var a in SplitAllergens(item.Allergens))
-            fAllergens.Add(a);
+        fAllergenIds.Clear();
+        foreach (var a in item.Allergens)
+            fAllergenIds.Add(a.Id);
         formError = null;
         showForm = true;
     }
@@ -201,12 +196,11 @@ else
             return;
         }
 
-        var allergens = string.Join(",", AllAllergens.Where(fAllergens.Contains));
-
+        var ids = fAllergenIds.ToList();
         if (editId is null)
-            await Api.CreateIngredientAsync(new CreateIngredientRequest(fName, fQuantity, fUnit, fThreshold, allergens));
+            await Api.CreateIngredientAsync(new CreateIngredientRequest(fName, fQuantity, fUnit, fThreshold, ids));
         else
-            await Api.UpdateIngredientAsync(editId.Value, new UpdateIngredientRequest(fName, fQuantity, fUnit, fThreshold, allergens));
+            await Api.UpdateIngredientAsync(editId.Value, new UpdateIngredientRequest(fName, fQuantity, fUnit, fThreshold, ids));
 
         showForm = false;
         await LoadAsync();

@@ -9,6 +9,7 @@ namespace RestaurantApp.Api.Controllers;
 [Route("api/ingredients")]
 public class IngredientsController(
     IIngredientRepository ingredients,
+    IAllergenRepository allergens,
     IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet]
@@ -44,12 +45,14 @@ public class IngredientsController(
             Quantity = request.Quantity,
             Unit = request.Unit,
             LowStockThreshold = request.LowStockThreshold,
-            Allergens = request.Allergens ?? string.Empty,
+            Allergens = await allergens.GetByIdsAsync(request.AllergenIds, ct),
         };
 
         ingredients.Add(ingredient);
         await unitOfWork.SaveChangesAsync(ct);
-        return Results.Created($"/api/ingredients/{ingredient.Id}", ingredient.ToDto());
+
+        var created = await ingredients.GetByIdAsync(ingredient.Id, ct);
+        return Results.Created($"/api/ingredients/{ingredient.Id}", created!.ToDto());
     }
 
     [HttpPut("{id:int}")]
@@ -63,10 +66,15 @@ public class IngredientsController(
         ingredient.Quantity = request.Quantity;
         ingredient.Unit = request.Unit;
         ingredient.LowStockThreshold = request.LowStockThreshold;
-        ingredient.Allergens = request.Allergens ?? string.Empty;
+
+        var resolved = await allergens.GetByIdsAsync(request.AllergenIds, ct);
+        ingredient.Allergens.Clear();
+        foreach (var allergen in resolved)
+            ingredient.Allergens.Add(allergen);
 
         await unitOfWork.SaveChangesAsync(ct);
-        return Results.Ok(ingredient.ToDto());
+        var updated = await ingredients.GetByIdAsync(id, ct);
+        return Results.Ok(updated!.ToDto());
     }
 
     [HttpDelete("{id:int}")]

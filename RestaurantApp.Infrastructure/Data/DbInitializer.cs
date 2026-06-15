@@ -7,45 +7,75 @@ namespace RestaurantApp.Infrastructure.Data;
 /// <summary>Seeds a small, realistic data set so the app is usable on first run.</summary>
 public static class DbInitializer
 {
+    // The EU's 14 major food allergens.
+    private static readonly string[] EuAllergens =
+    [
+        "Gluten", "Crustaceans", "Eggs", "Fish", "Peanuts", "Soybeans", "Milk",
+        "Nuts", "Celery", "Mustard", "Sesame", "Sulphites", "Lupin", "Molluscs"
+    ];
+
     public static async Task SeedAsync(AppDbContext db, CancellationToken ct = default)
     {
         await db.Database.MigrateAsync(ct);
 
-        if (await db.Ingredients.AnyAsync(ct))
+        if (await db.Allergens.AnyAsync(ct))
             return; // already seeded
 
-        // Inventory
-        db.Ingredients.AddRange(
-            new Ingredient { Name = "Tomatoes", Quantity = 25m, Unit = "kg", LowStockThreshold = 5m, Allergens = "" },
-            new Ingredient { Name = "Pasta", Quantity = 40m, Unit = "kg", LowStockThreshold = 10m, Allergens = "Gluten" },
-            new Ingredient { Name = "Ground Beef", Quantity = 12m, Unit = "kg", LowStockThreshold = 4m, Allergens = "" },
-            new Ingredient { Name = "Parmesan", Quantity = 6m, Unit = "kg", LowStockThreshold = 2m, Allergens = "Milk" },
-            new Ingredient { Name = "Pesto", Quantity = 3m, Unit = "liters", LowStockThreshold = 2m, Allergens = "Milk,Nuts" });
+        // Allergens (normalized reference data)
+        var allergens = EuAllergens.ToDictionary(name => name, name => new Allergen { Name = name });
+        db.Allergens.AddRange(allergens.Values);
+
+        // Inventory, with allergen associations
+        var tomatoes = new Ingredient { Name = "Tomatoes", Quantity = 25m, Unit = "kg", LowStockThreshold = 5m };
+        var pasta = new Ingredient { Name = "Pasta", Quantity = 40m, Unit = "kg", LowStockThreshold = 10m, Allergens = [allergens["Gluten"]] };
+        var beef = new Ingredient { Name = "Ground Beef", Quantity = 12m, Unit = "kg", LowStockThreshold = 4m };
+        var parmesan = new Ingredient { Name = "Parmesan", Quantity = 6m, Unit = "kg", LowStockThreshold = 2m, Allergens = [allergens["Milk"]] };
+        var pesto = new Ingredient { Name = "Pesto", Quantity = 3m, Unit = "liters", LowStockThreshold = 2m, Allergens = [allergens["Milk"], allergens["Nuts"]] };
+        db.Ingredients.AddRange(tomatoes, pasta, beef, parmesan, pesto);
+
+        // Recipes built from inventory
+        var bolognese = new Recipe
+        {
+            Name = "Pasta Bolognese",
+            Instructions = "Brown the beef, add tomatoes, simmer 30 min, serve over pasta with parmesan.",
+            Servings = 4,
+            Ingredients =
+            [
+                new RecipeIngredient { Ingredient = pasta, Quantity = 0.5m },
+                new RecipeIngredient { Ingredient = beef, Quantity = 0.6m },
+                new RecipeIngredient { Ingredient = tomatoes, Quantity = 0.4m },
+                new RecipeIngredient { Ingredient = parmesan, Quantity = 0.1m },
+            ],
+        };
+        var pestoPasta = new Recipe
+        {
+            Name = "Pesto Pasta",
+            Instructions = "Cook pasta, toss with pesto, top with parmesan.",
+            Servings = 4,
+            Ingredients =
+            [
+                new RecipeIngredient { Ingredient = pasta, Quantity = 0.5m },
+                new RecipeIngredient { Ingredient = pesto, Quantity = 0.2m },
+                new RecipeIngredient { Ingredient = parmesan, Quantity = 0.1m },
+            ],
+        };
+        db.Recipes.AddRange(bolognese, pestoPasta);
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var thisMonday = WeekRules.MondayOf(today);
 
-        // Menus (Monday-anchored, free-text)
-        db.Menus.AddRange(
-            new Menu
-            {
-                Name = "Spring lunch menu",
-                WeekStart = thisMonday,
-                Content =
-                    "Monday: Pasta Bolognese · Green salad\n" +
-                    "Tuesday: Chicken curry · Basmati rice\n" +
-                    "Wednesday: Vegetarian lasagne\n" +
-                    "Thursday: Grilled salmon · Seasonal vegetables\n" +
-                    "Friday: Beef burger · Fries",
-                NutritionalInfo = "Avg. 750 kcal/serving · 35 g protein · 28 g fat · 80 g carbs",
-            },
-            new Menu
-            {
-                Name = "Previous week",
-                WeekStart = thisMonday.AddDays(-7),
-                Content = "Monday–Friday: rotating seasonal dishes.",
-                NutritionalInfo = "Avg. 720 kcal/serving",
-            });
+        db.Menus.Add(new Menu
+        {
+            Name = "Spring lunch menu",
+            WeekStart = thisMonday,
+            Content = "House specials this week.",
+            NutritionalInfo = "Avg. 750 kcal/serving",
+            MenuRecipes =
+            [
+                new MenuRecipe { Recipe = bolognese, Day = 0 }, // Monday
+                new MenuRecipe { Recipe = pestoPasta, Day = 2 }, // Wednesday
+            ],
+        });
 
         // Staff
         var alice = new Employee { FirstName = "Alice", LastName = "Müller", Role = "Cook", HourlyRate = 32.00m };

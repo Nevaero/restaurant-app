@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApp.Api.DTOs;
+using RestaurantApp.Api.Services;
 using RestaurantApp.Core;
 using RestaurantApp.Core.Entities;
 using RestaurantApp.Core.Interfaces;
@@ -8,7 +9,10 @@ namespace RestaurantApp.Api.Controllers;
 
 [ApiController]
 [Route("api/menus")]
-public class MenusController(IMenuRepository menus, IUnitOfWork unitOfWork) : ControllerBase
+public class MenusController(
+    IMenuRepository menus,
+    IUnitOfWork unitOfWork,
+    MenuPdfService pdf) : ControllerBase
 {
     [HttpGet]
     public async Task<IResult> GetAll(CancellationToken ct)
@@ -20,7 +24,7 @@ public class MenusController(IMenuRepository menus, IUnitOfWork unitOfWork) : Co
     [HttpGet("{id:int}")]
     public async Task<IResult> GetById(int id, CancellationToken ct)
     {
-        var menu = await menus.GetByIdAsync(id, ct);
+        var menu = await menus.GetWithRecipesAsync(id, ct);
         return menu is null ? Results.NotFound() : Results.Ok(menu.ToDto());
     }
 
@@ -35,19 +39,19 @@ public class MenusController(IMenuRepository menus, IUnitOfWork unitOfWork) : Co
             Name = request.Name,
             // Menus always run Monday–Sunday; snap whatever date was picked to its Monday.
             WeekStart = WeekRules.MondayOf(request.WeekStart),
-            Content = string.Empty,
-            NutritionalInfo = string.Empty,
         };
 
         menus.Add(menu);
         await unitOfWork.SaveChangesAsync(ct);
-        return Results.Created($"/api/menus/{menu.Id}", menu.ToDto());
+
+        var created = await menus.GetWithRecipesAsync(menu.Id, ct);
+        return Results.Created($"/api/menus/{menu.Id}", created!.ToDto());
     }
 
     [HttpPut("{id:int}")]
     public async Task<IResult> Update(int id, UpdateMenuRequest request, CancellationToken ct)
     {
-        var menu = await menus.GetByIdAsync(id, ct);
+        var menu = await menus.GetWithRecipesAsync(id, ct);
         if (menu is null)
             return Results.NotFound();
 
@@ -56,8 +60,14 @@ public class MenusController(IMenuRepository menus, IUnitOfWork unitOfWork) : Co
         menu.Content = request.Content;
         menu.NutritionalInfo = request.NutritionalInfo;
 
+        // Replace the recipe assignments wholesale.
+        menu.MenuRecipes.Clear();
+        foreach (var item in request.Recipes.Where(r => r.RecipeId > 0))
+            menu.MenuRecipes.Add(new MenuRecipe { RecipeId = item.RecipeId, Day = Math.Clamp(item.Day, 0, 6) });
+
         await unitOfWork.SaveChangesAsync(ct);
-        return Results.Ok(menu.ToDto());
+        var updated = await menus.GetWithRecipesAsync(id, ct);
+        return Results.Ok(updated!.ToDto());
     }
 
     [HttpDelete("{id:int}")]
@@ -70,5 +80,18 @@ public class MenusController(IMenuRepository menus, IUnitOfWork unitOfWork) : Co
         menus.Remove(menu);
         await unitOfWork.SaveChangesAsync(ct);
         return Results.NoContent();
+    }
+
+    /// <summary>Renders the menu as an A4-landscape PDF.</summary>
+    [HttpGet("{id:int}/pdf")]
+    public async Task<IResult> GetPdf(int id, CancellationToken ct)
+    {
+        var menu = await menus.GetWithRecipesAsync(id, ct);
+        if (menu is null)
+            return Results.NotFound();
+
+        var bytes = pdf.Generate(menu);
+        var fileName = $"menu-{menu.WeekStart:yyyy-MM-dd}.pdf";
+        return Results.File(bytes, "application/pdf", fileName);
     }
 }

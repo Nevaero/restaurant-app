@@ -1,0 +1,227 @@
+@page "/recipes"
+@inject ApiClient Api
+
+<PageTitle>Recipes</PageTitle>
+
+<h1>Recipes</h1>
+
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <input class="form-control" style="max-width: 320px" placeholder="Search recipes or ingredients…"
+           @bind="search" @bind:event="oninput" @bind:after="LoadAsync" />
+    <span class="ms-auto"></span>
+    <button class="btn btn-success" @onclick="ShowAddForm">+ New recipe</button>
+</div>
+
+@if (loading)
+{
+    <p><em>Loading…</em></p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else if (recipes.Count == 0)
+{
+    <p class="text-muted">No recipes found.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th class="text-end">Servings</th>
+                <th class="text-end">Ingredients</th>
+                <th>Allergens</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var recipe in recipes)
+            {
+                <tr>
+                    <td>@recipe.Name</td>
+                    <td class="text-end">@recipe.Servings</td>
+                    <td class="text-end">@recipe.IngredientCount</td>
+                    <td>
+                        @foreach (var a in recipe.Allergens)
+                        {
+                            <span class="badge bg-info text-dark me-1">@a</span>
+                        }
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowEdit(recipe.Id)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(recipe)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showForm)
+{
+    <div class="modal-backdrop-custom">
+        <div class="card shadow modal-card modal-card-wide">
+            <div class="card-body">
+                <h5 class="card-title">@(editId is null ? "New recipe" : "Edit recipe")</h5>
+                <div class="row">
+                    <div class="col-md-8 mb-2">
+                        <label class="form-label">Name</label>
+                        <input class="form-control" @bind="fName" />
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label">Servings</label>
+                        <input type="number" min="1" class="form-control" @bind="fServings" />
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Instructions</label>
+                    <textarea class="form-control" rows="4" @bind="fInstructions"></textarea>
+                </div>
+
+                <h6 class="mt-2">Ingredients</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Ingredient</th><th style="width: 140px">Quantity</th><th>Unit</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in fLines)
+                        {
+                            <tr>
+                                <td>
+                                    <select class="form-select form-select-sm" @bind="line.IngredientId">
+                                        <option value="0" disabled>Select…</option>
+                                        @foreach (var ing in ingredients)
+                                        {
+                                            <option value="@ing.Id">@ing.Name</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.001" class="form-control form-control-sm" @bind="line.Quantity" /></td>
+                                <td>@UnitFor(line.IngredientId)</td>
+                                <td><button class="btn btn-sm btn-outline-danger" @onclick="() => fLines.Remove(line)">✕</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <button class="btn btn-sm btn-outline-secondary mb-2" @onclick="() => fLines.Add(new())">+ Add ingredient</button>
+
+                @if (formError is not null)
+                {
+                    <div class="alert alert-danger py-1">@formError</div>
+                }
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-secondary" @onclick="() => showForm = false">Cancel</button>
+                    <button class="btn btn-success" @onclick="SaveAsync">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<RecipeSummaryDto> recipes = [];
+    private List<IngredientDto> ingredients = [];
+    private string? search;
+    private bool loading = true;
+    private string? error;
+
+    private bool showForm;
+    private int? editId;
+    private string fName = string.Empty;
+    private string fInstructions = string.Empty;
+    private int fServings = 1;
+    private readonly List<Line> fLines = [];
+    private string? formError;
+
+    private sealed class Line
+    {
+        public int IngredientId { get; set; }
+        public decimal Quantity { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ingredients = await Api.GetIngredientsAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        error = null;
+        try
+        {
+            recipes = await Api.SearchRecipesAsync(search);
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not load recipes: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string UnitFor(int ingredientId) =>
+        ingredients.FirstOrDefault(i => i.Id == ingredientId)?.Unit ?? "";
+
+    private void ShowAddForm()
+    {
+        editId = null;
+        fName = string.Empty;
+        fInstructions = string.Empty;
+        fServings = 1;
+        fLines.Clear();
+        fLines.Add(new Line());
+        formError = null;
+        showForm = true;
+    }
+
+    private async Task ShowEdit(int id)
+    {
+        var recipe = await Api.GetRecipeAsync(id);
+        if (recipe is null) return;
+
+        editId = recipe.Id;
+        fName = recipe.Name;
+        fInstructions = recipe.Instructions;
+        fServings = recipe.Servings;
+        fLines.Clear();
+        foreach (var ri in recipe.Ingredients)
+            fLines.Add(new Line { IngredientId = ri.IngredientId, Quantity = ri.Quantity });
+        if (fLines.Count == 0) fLines.Add(new Line());
+        formError = null;
+        showForm = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(fName))
+        {
+            formError = "Name is required.";
+            return;
+        }
+
+        var lines = fLines
+            .Where(l => l.IngredientId > 0)
+            .Select(l => new RecipeIngredientInput(l.IngredientId, l.Quantity))
+            .ToList();
+
+        if (editId is null)
+            await Api.CreateRecipeAsync(new CreateRecipeRequest(fName, fInstructions, fServings, lines));
+        else
+            await Api.UpdateRecipeAsync(editId.Value, new UpdateRecipeRequest(fName, fInstructions, fServings, lines));
+
+        showForm = false;
+        await LoadAsync();
+    }
+
+    private async Task Delete(RecipeSummaryDto recipe)
+    {
+        await Api.DeleteRecipeAsync(recipe.Id);
+        await LoadAsync();
+    }
+}

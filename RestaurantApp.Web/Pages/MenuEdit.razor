@@ -13,9 +13,11 @@ else if (notFound)
 }
 else
 {
-    <div class="d-flex align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
         <a class="btn btn-outline-secondary btn-sm" href="menus">← Back</a>
         <h1 class="m-0">Edit menu</h1>
+        <span class="ms-auto"></span>
+        <a class="btn btn-outline-danger" href="@Api.MenuPdfUrl(Id)" target="_blank">⤓ Download PDF (A4)</a>
     </div>
 
     <div class="row g-3">
@@ -27,15 +29,67 @@ else
             <label class="form-label">Week starting (Monday)</label>
             <input type="date" class="form-control" @bind="weekDate" />
         </div>
+    </div>
+
+    <h2 class="h5 mt-4">Recipes</h2>
+    <p class="text-muted small">Assign recipes to days of the week. The PDF renders them as a Monday–Sunday grid.</p>
+    @if (assignments.Count == 0)
+    {
+        <p class="text-muted">No recipes assigned yet.</p>
+    }
+    else
+    {
+        <table class="table table-sm w-auto">
+            <thead><tr><th>Day</th><th>Recipe</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var line in assignments.OrderBy(a => a.Day))
+                {
+                    <tr>
+                        <td>
+                            <select class="form-select form-select-sm" @bind="line.Day">
+                                @for (var d = 0; d < 7; d++)
+                                {
+                                    var day = d;
+                                    <option value="@day">@DayNames[day]</option>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select form-select-sm" @bind="line.RecipeId">
+                                <option value="0" disabled>Select…</option>
+                                @foreach (var r in recipeCatalog)
+                                {
+                                    <option value="@r.Id">@r.Name</option>
+                                }
+                            </select>
+                        </td>
+                        <td><button class="btn btn-sm btn-outline-danger" @onclick="() => assignments.Remove(line)">✕</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <button class="btn btn-sm btn-outline-secondary" @onclick="() => assignments.Add(new())">+ Add recipe to a day</button>
+
+    @if (menuAllergens.Count > 0)
+    {
+        <div class="mt-3">
+            <strong>Allergens across this menu:</strong>
+            @foreach (var a in menuAllergens)
+            {
+                <span class="badge bg-info text-dark ms-1">@a</span>
+            }
+        </div>
+    }
+
+    <div class="row g-3 mt-1">
         <div class="col-12">
-            <label class="form-label">Menu content</label>
-            <textarea class="form-control" rows="10" @bind="content"
-                      placeholder="Monday: …&#10;Tuesday: …"></textarea>
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" rows="3" @bind="content"></textarea>
         </div>
         <div class="col-12">
             <label class="form-label">Nutritional values</label>
-            <textarea class="form-control" rows="4" @bind="nutrition"
-                      placeholder="Calories, macros, allergen notes, …"></textarea>
+            <textarea class="form-control" rows="3" @bind="nutrition"></textarea>
         </div>
     </div>
 
@@ -55,6 +109,9 @@ else
 }
 
 @code {
+    private static readonly string[] DayNames =
+        ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
     [Parameter] public int Id { get; set; }
 
     private bool loading = true;
@@ -66,11 +123,21 @@ else
     private string content = string.Empty;
     private string nutrition = string.Empty;
     private DateTime weekDate = DateTime.Today;
+    private readonly List<Assignment> assignments = [];
+    private List<RecipeSummaryDto> recipeCatalog = [];
+    private IReadOnlyList<string> menuAllergens = [];
+
+    private sealed class Assignment
+    {
+        public int RecipeId { get; set; }
+        public int Day { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            recipeCatalog = await Api.SearchRecipesAsync(null);
             var menu = await Api.GetMenuAsync(Id);
             if (menu is null)
             {
@@ -81,6 +148,9 @@ else
             content = menu.Content;
             nutrition = menu.NutritionalInfo;
             weekDate = menu.WeekStart.ToDateTime(TimeOnly.MinValue);
+            menuAllergens = menu.Allergens;
+            foreach (var mr in menu.Recipes)
+                assignments.Add(new Assignment { RecipeId = mr.RecipeId, Day = mr.Day });
         }
         catch (Exception ex)
         {
@@ -103,16 +173,22 @@ else
             return;
         }
 
+        var recipes = assignments
+            .Where(a => a.RecipeId > 0)
+            .Select(a => new MenuRecipeInput(a.RecipeId, a.Day))
+            .ToList();
+
         try
         {
             var updated = await Api.UpdateMenuAsync(Id, new UpdateMenuRequest(
-                name, DateOnly.FromDateTime(weekDate), content, nutrition));
+                name, DateOnly.FromDateTime(weekDate), content, nutrition, recipes));
             if (updated is not null)
             {
                 name = updated.Name;
                 content = updated.Content;
                 nutrition = updated.NutritionalInfo;
                 weekDate = updated.WeekStart.ToDateTime(TimeOnly.MinValue);
+                menuAllergens = updated.Allergens;
             }
             saved = true;
         }
