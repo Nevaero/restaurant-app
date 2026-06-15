@@ -8,4 +8,5 @@ public interface IIngredientRepository
     Task<List<Ingredient>> GetLowStockAsync(CancellationToken ct = default);
     Task<Ingredient?> GetByIdAsync(int id, CancellationToken ct = default);
     void Add(Ingredient ingredient);
+    void Remove(Ingredient ingredient);
 }

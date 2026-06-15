@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApp.Api.DTOs;
 using RestaurantApp.Core.Entities;
 using RestaurantApp.Core.Interfaces;
+using RestaurantApp.Core.Services;
 
 namespace RestaurantApp.Api.Controllers;
 
@@ -9,7 +10,9 @@ namespace RestaurantApp.Api.Controllers;
 [Route("api/shifts")]
 public class ShiftsController(
     IShiftRepository shifts,
-    IUnitOfWork unitOfWork) : ControllerBase
+    IEmployeeRepository employees,
+    IUnitOfWork unitOfWork,
+    SchedulingService scheduling) : ControllerBase
 {
     [HttpGet]
     public async Task<IResult> GetAll(CancellationToken ct)
@@ -25,6 +28,22 @@ public class ShiftsController(
         return Results.Ok(week.Select(s => s.ToDto()));
     }
 
+    /// <summary>The full week view: shifts plus per-employee hours, labour cost and overtime flags.</summary>
+    [HttpGet("week/schedule")]
+    public async Task<IResult> GetWeekSchedule([FromQuery] DateOnly start, CancellationToken ct)
+    {
+        var week = await shifts.GetWeekAsync(start, ct);
+        var staff = await employees.GetAllAsync(ct);
+
+        var summaries = scheduling.SummariseWeek(staff, week);
+        var dto = new WeekScheduleDto(
+            start,
+            week.Select(s => s.ToDto()).ToList(),
+            summaries.Select(s => s.ToDto()).ToList());
+
+        return Results.Ok(dto);
+    }
+
     [HttpGet("employee/{employeeId:int}")]
     public async Task<IResult> GetByEmployee(int employeeId, CancellationToken ct)
     {
@@ -35,9 +54,6 @@ public class ShiftsController(
     [HttpPost]
     public async Task<IResult> Create(CreateShiftRequest request, CancellationToken ct)
     {
-        if (request.EndTime <= request.StartTime)
-            return Results.BadRequest(new { error = "End time must be after start time." });
-
         var shift = new Shift
         {
             EmployeeId = request.EmployeeId,
@@ -46,6 +62,11 @@ public class ShiftsController(
             EndTime = request.EndTime,
             Notes = request.Notes,
         };
+
+        var existing = await shifts.GetByEmployeeAsync(request.EmployeeId, ct);
+        var error = scheduling.ValidateShift(shift, existing);
+        if (error is not null)
+            return Results.BadRequest(new { error });
 
         shifts.Add(shift);
         await unitOfWork.SaveChangesAsync(ct);
@@ -57,9 +78,6 @@ public class ShiftsController(
     [HttpPut("{id:int}")]
     public async Task<IResult> Update(int id, UpdateShiftRequest request, CancellationToken ct)
     {
-        if (request.EndTime <= request.StartTime)
-            return Results.BadRequest(new { error = "End time must be after start time." });
-
         var shift = await shifts.GetByIdAsync(id, ct);
         if (shift is null)
             return Results.NotFound();
@@ -69,6 +87,11 @@ public class ShiftsController(
         shift.StartTime = request.StartTime;
         shift.EndTime = request.EndTime;
         shift.Notes = request.Notes;
+
+        var existing = await shifts.GetByEmployeeAsync(request.EmployeeId, ct);
+        var error = scheduling.ValidateShift(shift, existing);
+        if (error is not null)
+            return Results.BadRequest(new { error });
 
         await unitOfWork.SaveChangesAsync(ct);
         var updated = await shifts.GetByIdAsync(id, ct);

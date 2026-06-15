@@ -12,7 +12,7 @@ public class IngredientRepository(AppDbContext db) : IIngredientRepository
 
     public Task<List<Ingredient>> GetLowStockAsync(CancellationToken ct = default) =>
         db.Ingredients
-            .Where(i => i.StockQuantity < i.LowStockThreshold)
+            .Where(i => i.Quantity < i.LowStockThreshold)
             .OrderBy(i => i.Name)
             .ToListAsync(ct);
 
@@ -20,4 +20,6 @@ public class IngredientRepository(AppDbContext db) : IIngredientRepository
         db.Ingredients.FirstOrDefaultAsync(i => i.Id == id, ct);
 
     public void Add(Ingredient ingredient) => db.Ingredients.Add(ingredient);
+
+    public void Remove(Ingredient ingredient) => db.Ingredients.Remove(ingredient);
 }

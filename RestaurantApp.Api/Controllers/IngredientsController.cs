@@ -35,29 +35,49 @@ public class IngredientsController(
     [HttpPost]
     public async Task<IResult> Create(CreateIngredientRequest request, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return Results.BadRequest(new { error = "Name is required." });
+
         var ingredient = new Ingredient
         {
             Name = request.Name,
-            StockQuantity = request.StockQuantity,
-            LowStockThreshold = request.LowStockThreshold,
+            Quantity = request.Quantity,
             Unit = request.Unit,
+            LowStockThreshold = request.LowStockThreshold,
+            Allergens = request.Allergens ?? string.Empty,
         };
 
         ingredients.Add(ingredient);
         await unitOfWork.SaveChangesAsync(ct);
-
         return Results.Created($"/api/ingredients/{ingredient.Id}", ingredient.ToDto());
     }
 
-    [HttpPatch("{id:int}/stock")]
-    public async Task<IResult> UpdateStock(int id, UpdateStockRequest request, CancellationToken ct)
+    [HttpPut("{id:int}")]
+    public async Task<IResult> Update(int id, UpdateIngredientRequest request, CancellationToken ct)
     {
         var ingredient = await ingredients.GetByIdAsync(id, ct);
         if (ingredient is null)
             return Results.NotFound();
 
-        ingredient.StockQuantity = request.StockQuantity;
+        ingredient.Name = request.Name;
+        ingredient.Quantity = request.Quantity;
+        ingredient.Unit = request.Unit;
+        ingredient.LowStockThreshold = request.LowStockThreshold;
+        ingredient.Allergens = request.Allergens ?? string.Empty;
+
         await unitOfWork.SaveChangesAsync(ct);
         return Results.Ok(ingredient.ToDto());
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IResult> Delete(int id, CancellationToken ct)
+    {
+        var ingredient = await ingredients.GetByIdAsync(id, ct);
+        if (ingredient is null)
+            return Results.NotFound();
+
+        ingredients.Remove(ingredient);
+        await unitOfWork.SaveChangesAsync(ct);
+        return Results.NoContent();
     }
 }

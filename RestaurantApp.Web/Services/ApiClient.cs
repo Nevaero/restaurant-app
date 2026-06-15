@@ -8,11 +8,11 @@ namespace RestaurantApp.Web.Services;
 public class ApiClient(HttpClient http)
 {
     // Menus
-    public async Task<List<MenuDto>> GetMenusAsync() =>
-        await http.GetFromJsonAsync<List<MenuDto>>("api/menus") ?? [];
+    public async Task<List<MenuSummaryDto>> GetMenusAsync() =>
+        await http.GetFromJsonAsync<List<MenuSummaryDto>>("api/menus") ?? [];
 
-    public async Task<List<MenuDto>> GetTodaysMenusAsync() =>
-        await http.GetFromJsonAsync<List<MenuDto>>("api/menus/today") ?? [];
+    public async Task<MenuDto?> GetMenuAsync(int id) =>
+        await http.GetFromJsonAsync<MenuDto>($"api/menus/{id}");
 
     public async Task<MenuDto?> CreateMenuAsync(CreateMenuRequest request)
     {
@@ -31,19 +31,9 @@ public class ApiClient(HttpClient http)
     public async Task DeleteMenuAsync(int id) =>
         (await http.DeleteAsync($"api/menus/{id}")).EnsureSuccessStatusCode();
 
-    public async Task<ServeMenuResponse?> ServeMenuAsync(int id, int servings)
-    {
-        var response = await http.PostAsJsonAsync($"api/menus/{id}/serve", new ServeMenuRequest(servings));
-        // 400 still carries a ServeMenuResponse body describing the shortfall.
-        return await response.Content.ReadFromJsonAsync<ServeMenuResponse>();
-    }
-
-    // Ingredients
+    // Inventory
     public async Task<List<IngredientDto>> GetIngredientsAsync() =>
         await http.GetFromJsonAsync<List<IngredientDto>>("api/ingredients") ?? [];
-
-    public async Task<List<IngredientDto>> GetLowStockAsync() =>
-        await http.GetFromJsonAsync<List<IngredientDto>>("api/ingredients/low-stock") ?? [];
 
     public async Task<IngredientDto?> CreateIngredientAsync(CreateIngredientRequest request)
     {
@@ -52,36 +42,46 @@ public class ApiClient(HttpClient http)
         return await response.Content.ReadFromJsonAsync<IngredientDto>();
     }
 
-    public async Task<IngredientDto?> UpdateStockAsync(int id, decimal stockQuantity)
+    public async Task<IngredientDto?> UpdateIngredientAsync(int id, UpdateIngredientRequest request)
     {
-        var response = await http.PatchAsJsonAsync($"api/ingredients/{id}/stock", new UpdateStockRequest(stockQuantity));
+        var response = await http.PutAsJsonAsync($"api/ingredients/{id}", request);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<IngredientDto>();
     }
+
+    public async Task DeleteIngredientAsync(int id) =>
+        (await http.DeleteAsync($"api/ingredients/{id}")).EnsureSuccessStatusCode();
 
     // Employees
     public async Task<List<EmployeeDto>> GetEmployeesAsync() =>
         await http.GetFromJsonAsync<List<EmployeeDto>>("api/employees") ?? [];
 
-    // Shifts
-    public async Task<List<ShiftDto>> GetWeekShiftsAsync(DateOnly weekStart) =>
-        await http.GetFromJsonAsync<List<ShiftDto>>($"api/shifts/week?start={weekStart:yyyy-MM-dd}") ?? [];
+    public async Task<(bool Success, string? Error)> CreateEmployeeAsync(CreateEmployeeRequest request) =>
+        await PostExpectingValidation("api/employees", request);
 
-    public async Task<(bool Success, string? Error)> CreateShiftAsync(CreateShiftRequest request)
+    // Shifts / planning
+    public async Task<WeekScheduleDto?> GetWeekScheduleAsync(DateOnly weekStart) =>
+        await http.GetFromJsonAsync<WeekScheduleDto>($"api/shifts/week/schedule?start={weekStart:yyyy-MM-dd}");
+
+    public async Task<(bool Success, string? Error)> CreateShiftAsync(CreateShiftRequest request) =>
+        await PostExpectingValidation("api/shifts", request);
+
+    public async Task DeleteShiftAsync(int id) =>
+        (await http.DeleteAsync($"api/shifts/{id}")).EnsureSuccessStatusCode();
+
+    /// <summary>POSTs a request that may return a 400 with an { error } body.</summary>
+    private async Task<(bool Success, string? Error)> PostExpectingValidation<T>(string url, T request)
     {
-        var response = await http.PostAsJsonAsync("api/shifts", request);
+        var response = await http.PostAsJsonAsync(url, request);
         if (response.IsSuccessStatusCode)
             return (true, null);
         if (response.StatusCode == HttpStatusCode.BadRequest)
         {
             var problem = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-            return (false, problem?.Error ?? "Could not create shift.");
+            return (false, problem?.Error ?? "Request was rejected.");
         }
         return (false, $"Request failed: {(int)response.StatusCode}");
     }
-
-    public async Task DeleteShiftAsync(int id) =>
-        (await http.DeleteAsync($"api/shifts/{id}")).EnsureSuccessStatusCode();
 
     private record ErrorResponse(string Error);
 }

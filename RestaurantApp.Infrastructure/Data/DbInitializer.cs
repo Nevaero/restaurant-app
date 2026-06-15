@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RestaurantApp.Core;
 using RestaurantApp.Core.Entities;
 
 namespace RestaurantApp.Infrastructure.Data;
@@ -13,60 +14,55 @@ public static class DbInitializer
         if (await db.Ingredients.AnyAsync(ct))
             return; // already seeded
 
-        var tomatoes = new Ingredient { Name = "Tomatoes", StockQuantity = 25m, LowStockThreshold = 5m, Unit = "kg" };
-        var pasta = new Ingredient { Name = "Pasta", StockQuantity = 40m, LowStockThreshold = 10m, Unit = "kg" };
-        var beef = new Ingredient { Name = "Ground Beef", StockQuantity = 12m, LowStockThreshold = 4m, Unit = "kg" };
-        var cheese = new Ingredient { Name = "Parmesan", StockQuantity = 6m, LowStockThreshold = 2m, Unit = "kg" };
-        var lettuce = new Ingredient { Name = "Lettuce", StockQuantity = 8m, LowStockThreshold = 3m, Unit = "kg" };
-        db.Ingredients.AddRange(tomatoes, pasta, beef, cheese, lettuce);
+        // Inventory
+        db.Ingredients.AddRange(
+            new Ingredient { Name = "Tomatoes", Quantity = 25m, Unit = "kg", LowStockThreshold = 5m, Allergens = "" },
+            new Ingredient { Name = "Pasta", Quantity = 40m, Unit = "kg", LowStockThreshold = 10m, Allergens = "Gluten" },
+            new Ingredient { Name = "Ground Beef", Quantity = 12m, Unit = "kg", LowStockThreshold = 4m, Allergens = "" },
+            new Ingredient { Name = "Parmesan", Quantity = 6m, Unit = "kg", LowStockThreshold = 2m, Allergens = "Milk" },
+            new Ingredient { Name = "Pesto", Quantity = 3m, Unit = "liters", LowStockThreshold = 2m, Allergens = "Milk,Nuts" });
 
         var today = DateOnly.FromDateTime(DateTime.Today);
+        var thisMonday = WeekRules.MondayOf(today);
 
-        var lunchMenu = new Menu
-        {
-            Name = "Lunch Menu #1",
-            Date = today,
-            IsActive = true,
-            MenuItems =
-            [
-                new MenuItem { Dish = "Pasta Bolognese", Ingredient = pasta, QuantityRequired = 0.15m },
-                new MenuItem { Dish = "Pasta Bolognese", Ingredient = beef, QuantityRequired = 0.12m },
-                new MenuItem { Dish = "Pasta Bolognese", Ingredient = tomatoes, QuantityRequired = 0.10m },
-                new MenuItem { Dish = "Pasta Bolognese", Ingredient = cheese, QuantityRequired = 0.02m },
-            ],
-        };
+        // Menus (Monday-anchored, free-text)
+        db.Menus.AddRange(
+            new Menu
+            {
+                Name = "Spring lunch menu",
+                WeekStart = thisMonday,
+                Content =
+                    "Monday: Pasta Bolognese · Green salad\n" +
+                    "Tuesday: Chicken curry · Basmati rice\n" +
+                    "Wednesday: Vegetarian lasagne\n" +
+                    "Thursday: Grilled salmon · Seasonal vegetables\n" +
+                    "Friday: Beef burger · Fries",
+                NutritionalInfo = "Avg. 750 kcal/serving · 35 g protein · 28 g fat · 80 g carbs",
+            },
+            new Menu
+            {
+                Name = "Previous week",
+                WeekStart = thisMonday.AddDays(-7),
+                Content = "Monday–Friday: rotating seasonal dishes.",
+                NutritionalInfo = "Avg. 720 kcal/serving",
+            });
 
-        var saladMenu = new Menu
-        {
-            Name = "Lunch Menu #2",
-            Date = today,
-            IsActive = true,
-            MenuItems =
-            [
-                new MenuItem { Dish = "Caprese Salad", Ingredient = tomatoes, QuantityRequired = 0.20m },
-                new MenuItem { Dish = "Caprese Salad", Ingredient = lettuce, QuantityRequired = 0.08m },
-                new MenuItem { Dish = "Caprese Salad", Ingredient = cheese, QuantityRequired = 0.05m },
-            ],
-        };
-        db.Menus.AddRange(lunchMenu, saladMenu);
-
-        var alice = new Employee { FirstName = "Alice", LastName = "Müller", Role = "Chef" };
-        var bruno = new Employee { FirstName = "Bruno", LastName = "Rossi", Role = "Server" };
-        var carla = new Employee { FirstName = "Carla", LastName = "Weber", Role = "Manager" };
+        // Staff
+        var alice = new Employee { FirstName = "Alice", LastName = "Müller", Role = "Cook", HourlyRate = 32.00m };
+        var bruno = new Employee { FirstName = "Bruno", LastName = "Rossi", Role = "Clerk", HourlyRate = 26.50m };
+        var carla = new Employee { FirstName = "Carla", LastName = "Weber", Role = "Manager", HourlyRate = 41.00m };
         db.Employees.AddRange(alice, bruno, carla);
 
-        // A week of shifts starting Monday of the current week.
-        var monday = today.AddDays(-((int)today.DayOfWeek + 6) % 7);
         var morning = (Start: new TimeOnly(8, 0), End: new TimeOnly(16, 0));
         var evening = (Start: new TimeOnly(14, 0), End: new TimeOnly(22, 0));
 
         for (var offset = 0; offset < 5; offset++) // Mon–Fri
         {
-            var date = monday.AddDays(offset);
+            var date = thisMonday.AddDays(offset);
             db.Shifts.Add(new Shift { Employee = alice, Date = date, StartTime = morning.Start, EndTime = morning.End });
             db.Shifts.Add(new Shift { Employee = bruno, Date = date, StartTime = evening.Start, EndTime = evening.End });
         }
-        db.Shifts.Add(new Shift { Employee = carla, Date = monday, StartTime = morning.Start, EndTime = morning.End, Notes = "Weekly planning" });
+        db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday, StartTime = morning.Start, EndTime = morning.End, Notes = "Weekly planning" });
 
         await db.SaveChangesAsync(ct);
     }

@@ -18,7 +18,8 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     FirstName = table.Column<string>(type: "TEXT", maxLength: 80, nullable: false),
                     LastName = table.Column<string>(type: "TEXT", maxLength: 80, nullable: false),
-                    Role = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false)
+                    Role = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false),
+                    HourlyRate = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -32,9 +33,10 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 120, nullable: false),
-                    StockQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
+                    Unit = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
                     LowStockThreshold = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
-                    Unit = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false)
+                    Allergens = table.Column<string>(type: "TEXT", maxLength: 400, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -48,8 +50,9 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 120, nullable: false),
-                    Date = table.Column<string>(type: "TEXT", nullable: false),
-                    IsActive = table.Column<bool>(type: "INTEGER", nullable: false)
+                    WeekStart = table.Column<string>(type: "TEXT", nullable: false),
+                    Content = table.Column<string>(type: "TEXT", maxLength: 8000, nullable: false),
+                    NutritionalInfo = table.Column<string>(type: "TEXT", maxLength: 4000, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -79,44 +82,6 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "MenuItems",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Dish = table.Column<string>(type: "TEXT", maxLength: 120, nullable: false),
-                    MenuId = table.Column<int>(type: "INTEGER", nullable: false),
-                    IngredientId = table.Column<int>(type: "INTEGER", nullable: false),
-                    QuantityRequired = table.Column<decimal>(type: "decimal(18,3)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MenuItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MenuItems_Ingredients_IngredientId",
-                        column: x => x.IngredientId,
-                        principalTable: "Ingredients",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_MenuItems_Menus_MenuId",
-                        column: x => x.MenuId,
-                        principalTable: "Menus",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MenuItems_IngredientId",
-                table: "MenuItems",
-                column: "IngredientId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MenuItems_MenuId",
-                table: "MenuItems",
-                column: "MenuId");
-
             migrationBuilder.CreateIndex(
                 name: "IX_Shifts_EmployeeId",
                 table: "Shifts",
@@ -127,16 +92,13 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "MenuItems");
-
-            migrationBuilder.DropTable(
-                name: "Shifts");
-
-            migrationBuilder.DropTable(
                 name: "Ingredients");
 
             migrationBuilder.DropTable(
                 name: "Menus");
+
+            migrationBuilder.DropTable(
+                name: "Shifts");
 
             migrationBuilder.DropTable(
                 name: "Employees");

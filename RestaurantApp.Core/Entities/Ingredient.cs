@@ -1,12 +1,12 @@
 namespace RestaurantApp.Core.Entities;
 
-/// <summary>A stock item in the kitchen.</summary>
+/// <summary>An inventory item held in the kitchen.</summary>
 public class Ingredient
 {
     public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;      // e.g. "Tomatoes"
-    public decimal StockQuantity { get; set; }            // current stock in kg/units
-    public decimal LowStockThreshold { get; set; }        // alert below this
-    public string Unit { get; set; } = string.Empty;      // "kg", "units", "liters"
-    public ICollection<MenuItem> MenuItems { get; set; } = [];
+    public string Name { get; set; } = string.Empty;     // e.g. "Tomatoes"
+    public decimal Quantity { get; set; }                // quantity in stock
+    public string Unit { get; set; } = string.Empty;     // "kg", "units", "liters"
+    public decimal LowStockThreshold { get; set; }       // alert below this
+    public string Allergens { get; set; } = string.Empty; // comma-separated EU allergen labels
 }

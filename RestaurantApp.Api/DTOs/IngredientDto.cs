@@ -3,15 +3,22 @@ namespace RestaurantApp.Api.DTOs;
 public record IngredientDto(
     int Id,
     string Name,
-    decimal StockQuantity,
-    decimal LowStockThreshold,
+    decimal Quantity,
     string Unit,
+    decimal LowStockThreshold,
+    string Allergens,
     bool IsLow);
 
 public record CreateIngredientRequest(
     string Name,
-    decimal StockQuantity,
+    decimal Quantity,
+    string Unit,
     decimal LowStockThreshold,
-    string Unit);
+    string Allergens);
 
-public record UpdateStockRequest(decimal StockQuantity);
+public record UpdateIngredientRequest(
+    string Name,
+    decimal Quantity,
+    string Unit,
+    decimal LowStockThreshold,
+    string Allergens);

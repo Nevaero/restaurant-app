@@ -1,0 +1,124 @@
+@page "/menus/{Id:int}"
+@inject ApiClient Api
+
+<PageTitle>Edit menu</PageTitle>
+
+@if (loading)
+{
+    <p><em>Loading…</em></p>
+}
+else if (notFound)
+{
+    <div class="alert alert-warning">Menu not found. <a href="menus">Back to menus</a></div>
+}
+else
+{
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <a class="btn btn-outline-secondary btn-sm" href="menus">← Back</a>
+        <h1 class="m-0">Edit menu</h1>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label">Name</label>
+            <input class="form-control" @bind="name" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Week starting (Monday)</label>
+            <input type="date" class="form-control" @bind="weekDate" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">Menu content</label>
+            <textarea class="form-control" rows="10" @bind="content"
+                      placeholder="Monday: …&#10;Tuesday: …"></textarea>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Nutritional values</label>
+            <textarea class="form-control" rows="4" @bind="nutrition"
+                      placeholder="Calories, macros, allergen notes, …"></textarea>
+        </div>
+    </div>
+
+    @if (saved)
+    {
+        <div class="alert alert-success mt-3 py-2">Saved.</div>
+    }
+    @if (saveError is not null)
+    {
+        <div class="alert alert-danger mt-3 py-2">@saveError</div>
+    }
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" @onclick="SaveAsync">Save</button>
+        <a class="btn btn-secondary" href="menus">Done</a>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool loading = true;
+    private bool notFound;
+    private bool saved;
+    private string? saveError;
+
+    private string name = string.Empty;
+    private string content = string.Empty;
+    private string nutrition = string.Empty;
+    private DateTime weekDate = DateTime.Today;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var menu = await Api.GetMenuAsync(Id);
+            if (menu is null)
+            {
+                notFound = true;
+                return;
+            }
+            name = menu.Name;
+            content = menu.Content;
+            nutrition = menu.NutritionalInfo;
+            weekDate = menu.WeekStart.ToDateTime(TimeOnly.MinValue);
+        }
+        catch (Exception ex)
+        {
+            saveError = ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        saved = false;
+        saveError = null;
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            saveError = "Name is required.";
+            return;
+        }
+
+        try
+        {
+            var updated = await Api.UpdateMenuAsync(Id, new UpdateMenuRequest(
+                name, DateOnly.FromDateTime(weekDate), content, nutrition));
+            if (updated is not null)
+            {
+                name = updated.Name;
+                content = updated.Content;
+                nutrition = updated.NutritionalInfo;
+                weekDate = updated.WeekStart.ToDateTime(TimeOnly.MinValue);
+            }
+            saved = true;
+        }
+        catch (Exception ex)
+        {
+            saveError = $"Could not save: {ex.Message}";
+        }
+    }
+}

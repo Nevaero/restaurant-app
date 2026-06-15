@@ -15,46 +15,78 @@ else if (error is not null)
 }
 else
 {
-    <div class="d-flex align-items-center gap-2 mb-3">
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
         <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(-7)">← Previous</button>
         <strong>@weekStart.ToString("dd MMM") – @weekStart.AddDays(6).ToString("dd MMM yyyy")</strong>
         <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(7)">Next →</button>
         <button class="btn btn-link" @onclick="GoToThisWeek">This week</button>
+        <span class="ms-auto"></span>
+        <button class="btn btn-success" @onclick="ShowAddEmployee">+ Add employee</button>
     </div>
 
-    <table class="table table-bordered align-middle planning-table">
-        <thead>
-            <tr>
-                <th>Employee</th>
-                @foreach (var day in WeekDays)
-                {
-                    <th class="text-center">@day.ToString("ddd")<br /><small class="text-muted">@day.ToString("dd.MM")</small></th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var employee in employees)
-            {
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle planning-table">
+            <thead>
                 <tr>
-                    <td><strong>@employee.FullName</strong><br /><small class="text-muted">@employee.Role</small></td>
+                    <th>Employee</th>
                     @foreach (var day in WeekDays)
                     {
-                        var cellShifts = ShiftsFor(employee.Id, day);
-                        <td class="text-center">
-                            @foreach (var s in cellShifts)
-                            {
-                                <div class="shift-chip" title="@s.Notes">
-                                    @s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm")
-                                    <button class="btn-close btn-close-sm" @onclick="() => DeleteShift(s)"></button>
-                                </div>
-                            }
-                            <button class="btn btn-sm btn-outline-secondary mt-1" @onclick="() => ShowAdd(employee, day)">+</button>
-                        </td>
+                        <th class="text-center">@day.ToString("ddd")<br /><small class="text-muted">@day.ToString("dd.MM")</small></th>
                     }
                 </tr>
+            </thead>
+            <tbody>
+                @foreach (var emp in summaries)
+                {
+                    <tr>
+                        <td>
+                            <strong>@emp.Name</strong><br />
+                            <span class="badge @RoleBadge(emp.Role)">@emp.Role</span>
+                        </td>
+                        @foreach (var day in WeekDays)
+                        {
+                            <td class="text-center">
+                                @foreach (var s in ShiftsFor(emp.EmployeeId, day))
+                                {
+                                    <div class="shift-chip" title="@s.Notes">
+                                        @s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm")
+                                        <button class="btn-close btn-close-sm" @onclick="() => DeleteShift(s)"></button>
+                                    </div>
+                                }
+                                <button class="btn btn-sm btn-outline-secondary mt-1" @onclick="() => ShowAddShift(emp, day)">+</button>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="h5 mt-4">Week summary</h2>
+    <table class="table table-sm w-auto">
+        <thead>
+            <tr><th>Employee</th><th>Role</th><th class="text-end">Hours</th><th class="text-end">Labour cost</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var emp in summaries)
+            {
+                <tr class="@(emp.IsOvertime ? "table-danger" : null)">
+                    <td>@emp.Name</td>
+                    <td>@emp.Role</td>
+                    <td class="text-end">@emp.TotalHours.ToString("0.##")</td>
+                    <td class="text-end">@emp.LaborCost.ToString("0.00")</td>
+                    <td>@if (emp.IsOvertime) { <span class="badge bg-danger">Overtime</span> }</td>
+                </tr>
             }
+            <tr class="fw-bold border-top">
+                <td colspan="2">Total</td>
+                <td class="text-end">@summaries.Sum(s => s.TotalHours).ToString("0.##")</td>
+                <td class="text-end">@summaries.Sum(s => s.LaborCost).ToString("0.00")</td>
+                <td></td>
+            </tr>
         </tbody>
     </table>
+    <p class="text-muted small">Overtime is flagged above @SchedulingThreshold h/week.</p>
 }
 
 @* Add-shift modal *@
@@ -63,7 +95,7 @@ else
     <div class="modal-backdrop-custom">
         <div class="card shadow modal-card">
             <div class="card-body">
-                <h5 class="card-title">Add shift — @addEmployee.FullName</h5>
+                <h5 class="card-title">Add shift — @addEmployee.Name</h5>
                 <p class="text-muted">@addDate.ToString("dddd, dd MMM yyyy")</p>
                 <div class="row">
                     <div class="col mb-2">
@@ -79,9 +111,9 @@ else
                     <label class="form-label">Notes (optional)</label>
                     <input class="form-control" @bind="addNotes" />
                 </div>
-                @if (addError is not null)
+                @if (shiftError is not null)
                 {
-                    <div class="alert alert-danger py-1">@addError</div>
+                    <div class="alert alert-danger py-1">@shiftError</div>
                 }
                 <div class="d-flex justify-content-end gap-2">
                     <button class="btn btn-secondary" @onclick="() => addEmployee = null">Cancel</button>
@@ -92,53 +124,109 @@ else
     </div>
 }
 
+@* Add-employee modal *@
+@if (showAddEmployee)
+{
+    <div class="modal-backdrop-custom">
+        <div class="card shadow modal-card">
+            <div class="card-body">
+                <h5 class="card-title">Add employee</h5>
+                <div class="row">
+                    <div class="col mb-2">
+                        <label class="form-label">First name</label>
+                        <input class="form-control" @bind="empFirst" />
+                    </div>
+                    <div class="col mb-2">
+                        <label class="form-label">Last name</label>
+                        <input class="form-control" @bind="empLast" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col mb-2">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" @bind="empRole">
+                            @foreach (var role in Roles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col mb-2">
+                        <label class="form-label">Hourly rate</label>
+                        <input type="number" step="0.01" class="form-control" @bind="empRate" />
+                    </div>
+                </div>
+                @if (empError is not null)
+                {
+                    <div class="alert alert-danger py-1">@empError</div>
+                }
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-secondary" @onclick="() => showAddEmployee = false">Cancel</button>
+                    <button class="btn btn-success" @onclick="SaveEmployee">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
-    private List<EmployeeDto> employees = [];
-    private List<ShiftDto> shifts = [];
+    private static readonly string[] Roles = ["Cook", "Clerk", "Server", "Manager"];
+    private const decimal SchedulingThreshold = 42m;
+
     private DateOnly weekStart;
+    private List<ShiftDto> shifts = [];
+    private List<EmployeeWeekSummaryDto> summaries = [];
     private bool loading = true;
     private string? error;
 
-    private EmployeeDto? addEmployee;
+    // add-shift state
+    private EmployeeWeekSummaryDto? addEmployee;
     private DateOnly addDate;
     private TimeOnly addStart = new(8, 0);
     private TimeOnly addEnd = new(16, 0);
     private string? addNotes;
-    private string? addError;
+    private string? shiftError;
+
+    // add-employee state
+    private bool showAddEmployee;
+    private string empFirst = string.Empty;
+    private string empLast = string.Empty;
+    private string empRole = "Cook";
+    private decimal empRate = 28m;
+    private string? empError;
 
     private IEnumerable<DateOnly> WeekDays => Enumerable.Range(0, 7).Select(weekStart.AddDays);
 
     protected override async Task OnInitializedAsync()
     {
         weekStart = MondayOf(DateOnly.FromDateTime(DateTime.Today));
-        await LoadEmployeesAsync();
         await LoadWeekAsync();
     }
 
     private static DateOnly MondayOf(DateOnly date) => date.AddDays(-(((int)date.DayOfWeek + 6) % 7));
 
-    private async Task LoadEmployeesAsync()
+    private static string RoleBadge(string role) => role switch
     {
-        try
-        {
-            employees = await Api.GetEmployeesAsync();
-        }
-        catch (Exception ex)
-        {
-            error = $"Could not load employees: {ex.Message}";
-        }
-    }
+        "Cook" => "bg-warning text-dark",
+        "Clerk" => "bg-primary",
+        "Server" => "bg-info text-dark",
+        "Manager" => "bg-dark",
+        _ => "bg-secondary",
+    };
 
     private async Task LoadWeekAsync()
     {
         loading = true;
+        error = null;
         try
         {
-            shifts = await Api.GetWeekShiftsAsync(weekStart);
+            var schedule = await Api.GetWeekScheduleAsync(weekStart);
+            shifts = schedule?.Shifts.ToList() ?? [];
+            summaries = schedule?.Summaries.ToList() ?? [];
         }
         catch (Exception ex)
         {
-            error = $"Could not load shifts: {ex.Message}";
+            error = $"Could not load schedule: {ex.Message}";
         }
         finally
         {
@@ -161,30 +249,25 @@ else
         await LoadWeekAsync();
     }
 
-    private void ShowAdd(EmployeeDto employee, DateOnly day)
+    private void ShowAddShift(EmployeeWeekSummaryDto employee, DateOnly day)
     {
         addEmployee = employee;
         addDate = day;
         addStart = new TimeOnly(8, 0);
         addEnd = new TimeOnly(16, 0);
         addNotes = null;
-        addError = null;
+        shiftError = null;
     }
 
     private async Task SaveShift()
     {
         if (addEmployee is null) return;
-        if (addEnd <= addStart)
-        {
-            addError = "End time must be after start time.";
-            return;
-        }
 
         var (success, err) = await Api.CreateShiftAsync(new CreateShiftRequest(
-            addEmployee.Id, addDate, addStart, addEnd, addNotes));
+            addEmployee.EmployeeId, addDate, addStart, addEnd, addNotes));
         if (!success)
         {
-            addError = err;
+            shiftError = err;
             return;
         }
 
@@ -195,6 +278,29 @@ else
     private async Task DeleteShift(ShiftDto shift)
     {
         await Api.DeleteShiftAsync(shift.Id);
+        await LoadWeekAsync();
+    }
+
+    private void ShowAddEmployee()
+    {
+        empFirst = string.Empty;
+        empLast = string.Empty;
+        empRole = "Cook";
+        empRate = 28m;
+        empError = null;
+        showAddEmployee = true;
+    }
+
+    private async Task SaveEmployee()
+    {
+        var (success, err) = await Api.CreateEmployeeAsync(new CreateEmployeeRequest(empFirst, empLast, empRole, empRate));
+        if (!success)
+        {
+            empError = err;
+            return;
+        }
+
+        showAddEmployee = false;
         await LoadWeekAsync();
     }
 }

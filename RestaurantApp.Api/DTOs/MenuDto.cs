@@ -1,17 +1,10 @@
 namespace RestaurantApp.Api.DTOs;
 
-public record MenuItemDto(int Id, string Dish, int IngredientId, string IngredientName, decimal QuantityRequired);
+public record MenuDto(int Id, string Name, DateOnly WeekStart, string Content, string NutritionalInfo);
 
-public record MenuDto(int Id, string Name, DateOnly Date, bool IsActive, IReadOnlyList<MenuItemDto> Items);
+/// <summary>Lightweight row for the menu list (omits the long text fields).</summary>
+public record MenuSummaryDto(int Id, string Name, DateOnly WeekStart);
 
-public record MenuItemInput(string Dish, int IngredientId, decimal QuantityRequired);
+public record CreateMenuRequest(string Name, DateOnly WeekStart);
 
-public record CreateMenuRequest(string Name, DateOnly Date, bool IsActive, IReadOnlyList<MenuItemInput> Items);
-
-public record UpdateMenuRequest(string Name, DateOnly Date, bool IsActive, IReadOnlyList<MenuItemInput> Items);
-
-public record ServeMenuRequest(int Servings = 1);
-
-public record LowStockWarningDto(int IngredientId, string Name, decimal RemainingStock, decimal Threshold, string Unit);
-
-public record ServeMenuResponse(bool Success, string? Error, IReadOnlyList<LowStockWarningDto> Warnings);
+public record UpdateMenuRequest(string Name, DateOnly WeekStart, string Content, string NutritionalInfo);

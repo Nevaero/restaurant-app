@@ -4,34 +4,34 @@
 
 <h1>RestaurantApp</h1>
 
-<p class="lead">A small corporate-restaurant management demo built with ASP.NET Core 8 and Blazor WebAssembly.</p>
+<p class="lead">A lightweight restaurant ERP — weekly menus, staff planning and inventory.</p>
 
-<div class="row g-3 mt-2">
+<div class="row g-4 mt-2">
     <div class="col-md-4">
-        <div class="card h-100">
+        <a class="card h-100 text-decoration-none text-reset home-card" href="menus">
             <div class="card-body">
-                <h5 class="card-title">Menus</h5>
-                <p class="card-text">Create daily menus, assign dishes and ingredients, and serve a menu to deduct stock.</p>
-                <a class="btn btn-primary" href="menus">Go to Menus</a>
+                <div class="home-card-icon">🍽️</div>
+                <h5 class="card-title">Menu</h5>
+                <p class="card-text text-muted">Plan the weekly menu — content and nutritional values, one menu per week.</p>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-4">
-        <div class="card h-100">
+        <a class="card h-100 text-decoration-none text-reset home-card" href="planning">
             <div class="card-body">
-                <h5 class="card-title">Stock</h5>
-                <p class="card-text">Track ingredient stock levels and adjust quantities. Low-stock items are highlighted.</p>
-                <a class="btn btn-primary" href="stock">Go to Stock</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
+                <div class="home-card-icon">📅</div>
                 <h5 class="card-title">Planning</h5>
-                <p class="card-text">View the weekly staff schedule and assign shifts to employees.</p>
-                <a class="btn btn-primary" href="planning">Go to Planning</a>
+                <p class="card-text text-muted">Schedule cooks and clerks across the week, with hours, labour cost and overtime alerts.</p>
             </div>
-        </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a class="card h-100 text-decoration-none text-reset home-card" href="inventory">
+            <div class="card-body">
+                <div class="home-card-icon">📦</div>
+                <h5 class="card-title">Inventaire</h5>
+                <p class="card-text text-muted">Track ingredients, quantities and allergens, with low-stock alerts.</p>
+            </div>
+        </a>
     </div>
 </div>

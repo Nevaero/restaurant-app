@@ -27,6 +27,9 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -48,6 +51,11 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Allergens")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("LowStockThreshold")
                         .HasColumnType("decimal(18,3)");
 
@@ -56,7 +64,7 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("StockQuantity")
+                    b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18,3)");
 
                     b.Property<string>("Unit")
@@ -75,50 +83,28 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Date")
+                    b.Property<string>("Content")
                         .IsRequired()
+                        .HasMaxLength(8000)
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("NutritionalInfo")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WeekStart")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("Menus");
-                });
-
-            modelBuilder.Entity("RestaurantApp.Core.Entities.MenuItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Dish")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("IngredientId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("MenuId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("QuantityRequired")
-                        .HasColumnType("decimal(18,3)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IngredientId");
-
-                    b.HasIndex("MenuId");
-
-                    b.ToTable("MenuItems");
                 });
 
             modelBuilder.Entity("RestaurantApp.Core.Entities.Shift", b =>
@@ -152,25 +138,6 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                     b.ToTable("Shifts");
                 });
 
-            modelBuilder.Entity("RestaurantApp.Core.Entities.MenuItem", b =>
-                {
-                    b.HasOne("RestaurantApp.Core.Entities.Ingredient", "Ingredient")
-                        .WithMany("MenuItems")
-                        .HasForeignKey("IngredientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("RestaurantApp.Core.Entities.Menu", "Menu")
-                        .WithMany("MenuItems")
-                        .HasForeignKey("MenuId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Ingredient");
-
-                    b.Navigation("Menu");
-                });
-
             modelBuilder.Entity("RestaurantApp.Core.Entities.Shift", b =>
                 {
                     b.HasOne("RestaurantApp.Core.Entities.Employee", "Employee")
@@ -185,16 +152,6 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
             modelBuilder.Entity("RestaurantApp.Core.Entities.Employee", b =>
                 {
                     b.Navigation("Shifts");
-                });
-
-            modelBuilder.Entity("RestaurantApp.Core.Entities.Ingredient", b =>
-                {
-                    b.Navigation("MenuItems");
-                });
-
-            modelBuilder.Entity("RestaurantApp.Core.Entities.Menu", b =>
-                {
-                    b.Navigation("MenuItems");
                 });
 #pragma warning restore 612, 618
         }

@@ -21,7 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IShiftRepository, ShiftRepository>();
         services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
-        services.AddScoped<StockDeductionService>();
+        services.AddScoped<SchedulingService>();
 
         return services;
     }

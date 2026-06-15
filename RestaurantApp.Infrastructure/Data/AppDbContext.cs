@@ -8,7 +8,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Menu> Menus => Set<Menu>();
     public DbSet<Ingredient> Ingredients => Set<Ingredient>();
-    public DbSet<MenuItem> MenuItems => Set<MenuItem>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Shift> Shifts => Set<Shift>();
 
@@ -23,36 +22,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Menu>(b =>
         {
             b.Property(m => m.Name).IsRequired().HasMaxLength(120);
-            b.Property(m => m.Date).HasConversion(dateOnlyConverter);
-            b.HasMany(m => m.MenuItems)
-                .WithOne(i => i.Menu)
-                .HasForeignKey(i => i.MenuId)
-                .OnDelete(DeleteBehavior.Cascade);
+            b.Property(m => m.WeekStart).HasConversion(dateOnlyConverter);
+            b.Property(m => m.Content).HasMaxLength(8000);
+            b.Property(m => m.NutritionalInfo).HasMaxLength(4000);
         });
 
         modelBuilder.Entity<Ingredient>(b =>
         {
             b.Property(i => i.Name).IsRequired().HasMaxLength(120);
             b.Property(i => i.Unit).IsRequired().HasMaxLength(20);
-            b.Property(i => i.StockQuantity).HasColumnType("decimal(18,3)");
+            b.Property(i => i.Quantity).HasColumnType("decimal(18,3)");
             b.Property(i => i.LowStockThreshold).HasColumnType("decimal(18,3)");
-        });
-
-        modelBuilder.Entity<MenuItem>(b =>
-        {
-            b.Property(i => i.Dish).IsRequired().HasMaxLength(120);
-            b.Property(i => i.QuantityRequired).HasColumnType("decimal(18,3)");
-            b.HasOne(i => i.Ingredient)
-                .WithMany(ing => ing.MenuItems)
-                .HasForeignKey(i => i.IngredientId)
-                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(i => i.Allergens).HasMaxLength(400);
         });
 
         modelBuilder.Entity<Employee>(b =>
         {
+            b.Ignore(e => e.FullName);
             b.Property(e => e.FirstName).IsRequired().HasMaxLength(80);
             b.Property(e => e.LastName).IsRequired().HasMaxLength(80);
             b.Property(e => e.Role).IsRequired().HasMaxLength(40);
+            b.Property(e => e.HourlyRate).HasColumnType("decimal(18,2)");
         });
 
         modelBuilder.Entity<Shift>(b =>
