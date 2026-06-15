@@ -1,0 +1,245 @@
+@page "/menus"
+@inject ApiClient Api
+
+<PageTitle>Menus</PageTitle>
+
+<h1>Menu Management</h1>
+
+@if (loading)
+{
+    <p><em>Loading…</em></p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    @if (serveMessage is not null)
+    {
+        <div class="alert @(serveSuccess ? "alert-success" : "alert-danger")" role="alert">
+            @serveMessage
+            @if (serveWarnings.Count > 0)
+            {
+                <ul class="mb-0 mt-2">
+                    @foreach (var w in serveWarnings)
+                    {
+                        <li>@w.Name is now low: @w.RemainingStock @w.Unit (threshold @w.Threshold)</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-success" @onclick="ShowCreateForm">+ New menu</button>
+    </div>
+
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Dishes</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var menu in menus)
+            {
+                <tr>
+                    <td>@menu.Name</td>
+                    <td>@menu.Date.ToString("yyyy-MM-dd")</td>
+                    <td>@string.Join(", ", menu.Items.Select(i => i.Dish).Distinct())</td>
+                    <td>
+                        @if (menu.IsActive)
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Inactive</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => ToggleActive(menu)">
+                            @(menu.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ServeMenu(menu)">Serve</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteMenu(menu)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@* Create-menu modal *@
+@if (showCreate)
+{
+    <div class="modal-backdrop-custom">
+        <div class="card shadow modal-card modal-card-wide">
+            <div class="card-body">
+                <h5 class="card-title">New menu</h5>
+                <div class="row">
+                    <div class="col mb-2">
+                        <label class="form-label">Name</label>
+                        <input class="form-control" @bind="newName" />
+                    </div>
+                    <div class="col mb-2">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" @bind="newDate" />
+                    </div>
+                    <div class="col-auto mb-2 d-flex align-items-end">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="active" @bind="newActive" />
+                            <label class="form-check-label" for="active">Active</label>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="mt-2">Dishes</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Dish</th><th>Ingredient</th><th>Qty / serving</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in newItems)
+                        {
+                            <tr>
+                                <td><input class="form-control form-control-sm" @bind="line.Dish" /></td>
+                                <td>
+                                    <select class="form-select form-select-sm" @bind="line.IngredientId">
+                                        <option value="0" disabled>Select…</option>
+                                        @foreach (var ing in ingredients)
+                                        {
+                                            <option value="@ing.Id">@ing.Name (@ing.Unit)</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.001" class="form-control form-control-sm" @bind="line.QuantityRequired" /></td>
+                                <td><button class="btn btn-sm btn-outline-danger" @onclick="() => newItems.Remove(line)">✕</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <button class="btn btn-sm btn-outline-secondary mb-2" @onclick="AddItemLine">+ Add dish</button>
+
+                @if (createError is not null)
+                {
+                    <div class="alert alert-danger py-1">@createError</div>
+                }
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-secondary" @onclick="() => showCreate = false">Cancel</button>
+                    <button class="btn btn-success" @onclick="SaveNew">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<MenuDto> menus = [];
+    private List<IngredientDto> ingredients = [];
+    private bool loading = true;
+    private string? error;
+
+    private string? serveMessage;
+    private bool serveSuccess;
+    private IReadOnlyList<LowStockWarningDto> serveWarnings = [];
+
+    private bool showCreate;
+    private string newName = string.Empty;
+    private DateTime newDate = DateTime.Today;
+    private bool newActive = true;
+    private readonly List<ItemLine> newItems = [];
+    private string? createError;
+
+    private sealed class ItemLine
+    {
+        public string Dish { get; set; } = string.Empty;
+        public int IngredientId { get; set; }
+        public decimal QuantityRequired { get; set; }
+    }
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        error = null;
+        try
+        {
+            menus = await Api.GetMenusAsync();
+            ingredients = await Api.GetIngredientsAsync();
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not load menus: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task ToggleActive(MenuDto menu)
+    {
+        var items = menu.Items.Select(i => new MenuItemInput(i.Dish, i.IngredientId, i.QuantityRequired)).ToList();
+        await Api.UpdateMenuAsync(menu.Id, new UpdateMenuRequest(menu.Name, menu.Date, !menu.IsActive, items));
+        await LoadAsync();
+    }
+
+    private async Task DeleteMenu(MenuDto menu)
+    {
+        await Api.DeleteMenuAsync(menu.Id);
+        await LoadAsync();
+    }
+
+    private async Task ServeMenu(MenuDto menu)
+    {
+        serveMessage = null;
+        var result = await Api.ServeMenuAsync(menu.Id, 1);
+        if (result is null) return;
+
+        serveSuccess = result.Success;
+        serveWarnings = result.Warnings;
+        serveMessage = result.Success
+            ? $"Served '{menu.Name}'. Stock deducted."
+            : result.Error ?? "Could not serve menu.";
+        await LoadAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        newName = string.Empty;
+        newDate = DateTime.Today;
+        newActive = true;
+        newItems.Clear();
+        AddItemLine();
+        createError = null;
+        showCreate = true;
+    }
+
+    private void AddItemLine() => newItems.Add(new ItemLine());
+
+    private async Task SaveNew()
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            createError = "Name is required.";
+            return;
+        }
+
+        var items = newItems
+            .Where(i => !string.IsNullOrWhiteSpace(i.Dish) && i.IngredientId > 0)
+            .Select(i => new MenuItemInput(i.Dish, i.IngredientId, i.QuantityRequired))
+            .ToList();
+
+        await Api.CreateMenuAsync(new CreateMenuRequest(
+            newName, DateOnly.FromDateTime(newDate), newActive, items));
+        showCreate = false;
+        await LoadAsync();
+    }
+}

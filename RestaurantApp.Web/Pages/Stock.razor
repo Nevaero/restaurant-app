@@ -1,0 +1,190 @@
+@page "/stock"
+@inject ApiClient Api
+
+<PageTitle>Stock</PageTitle>
+
+<h1>Ingredient Stock</h1>
+
+@if (loading)
+{
+    <p><em>Loading…</em></p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted">@ingredients.Count ingredient(s), @ingredients.Count(i => i.IsLow) low on stock</span>
+        <button class="btn btn-success" @onclick="ShowAddForm">+ Add ingredient</button>
+    </div>
+
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th class="text-end">Stock</th>
+                <th>Unit</th>
+                <th class="text-end">Low-stock threshold</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ingredient in ingredients)
+            {
+                <tr class="@(ingredient.IsLow ? "table-warning" : null)">
+                    <td>@ingredient.Name</td>
+                    <td class="text-end">@ingredient.StockQuantity</td>
+                    <td>@ingredient.Unit</td>
+                    <td class="text-end">@ingredient.LowStockThreshold</td>
+                    <td>
+                        @if (ingredient.IsLow)
+                        {
+                            <span class="badge bg-danger">Low</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">OK</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowAdjust(ingredient)">Adjust stock</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@* Adjust-stock modal *@
+@if (adjustTarget is not null)
+{
+    <div class="modal-backdrop-custom">
+        <div class="card shadow modal-card">
+            <div class="card-body">
+                <h5 class="card-title">Adjust stock — @adjustTarget.Name</h5>
+                <div class="mb-3">
+                    <label class="form-label">New stock quantity (@adjustTarget.Unit)</label>
+                    <input type="number" step="0.001" class="form-control" @bind="adjustValue" />
+                </div>
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-secondary" @onclick="() => adjustTarget = null">Cancel</button>
+                    <button class="btn btn-primary" @onclick="SaveAdjust">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Add-ingredient modal *@
+@if (showAdd)
+{
+    <div class="modal-backdrop-custom">
+        <div class="card shadow modal-card">
+            <div class="card-body">
+                <h5 class="card-title">Add ingredient</h5>
+                <div class="mb-2">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="newName" />
+                </div>
+                <div class="row">
+                    <div class="col mb-2">
+                        <label class="form-label">Stock quantity</label>
+                        <input type="number" step="0.001" class="form-control" @bind="newStock" />
+                    </div>
+                    <div class="col mb-2">
+                        <label class="form-label">Low-stock threshold</label>
+                        <input type="number" step="0.001" class="form-control" @bind="newThreshold" />
+                    </div>
+                    <div class="col mb-2">
+                        <label class="form-label">Unit</label>
+                        <input class="form-control" @bind="newUnit" placeholder="kg" />
+                    </div>
+                </div>
+                @if (addError is not null)
+                {
+                    <div class="alert alert-danger py-1">@addError</div>
+                }
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-secondary" @onclick="() => showAdd = false">Cancel</button>
+                    <button class="btn btn-success" @onclick="SaveNew">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<IngredientDto> ingredients = [];
+    private bool loading = true;
+    private string? error;
+
+    private IngredientDto? adjustTarget;
+    private decimal adjustValue;
+
+    private bool showAdd;
+    private string newName = string.Empty;
+    private decimal newStock;
+    private decimal newThreshold;
+    private string newUnit = "kg";
+    private string? addError;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        error = null;
+        try
+        {
+            ingredients = await Api.GetIngredientsAsync();
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not load ingredients: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ShowAdjust(IngredientDto ingredient)
+    {
+        adjustTarget = ingredient;
+        adjustValue = ingredient.StockQuantity;
+    }
+
+    private async Task SaveAdjust()
+    {
+        if (adjustTarget is null) return;
+        await Api.UpdateStockAsync(adjustTarget.Id, adjustValue);
+        adjustTarget = null;
+        await LoadAsync();
+    }
+
+    private void ShowAddForm()
+    {
+        newName = string.Empty;
+        newStock = 0;
+        newThreshold = 0;
+        newUnit = "kg";
+        addError = null;
+        showAdd = true;
+    }
+
+    private async Task SaveNew()
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            addError = "Name is required.";
+            return;
+        }
+
+        await Api.CreateIngredientAsync(new CreateIngredientRequest(newName, newStock, newThreshold, newUnit));
+        showAdd = false;
+        await LoadAsync();
+    }
+}

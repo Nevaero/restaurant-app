@@ -1,0 +1,200 @@
+@page "/planning"
+@inject ApiClient Api
+
+<PageTitle>Planning</PageTitle>
+
+<h1>Weekly Schedule</h1>
+
+@if (loading)
+{
+    <p><em>Loading…</em></p>
+}
+else if (error is not null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(-7)">← Previous</button>
+        <strong>@weekStart.ToString("dd MMM") – @weekStart.AddDays(6).ToString("dd MMM yyyy")</strong>
+        <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(7)">Next →</button>
+        <button class="btn btn-link" @onclick="GoToThisWeek">This week</button>
+    </div>
+
+    <table class="table table-bordered align-middle planning-table">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                @foreach (var day in WeekDays)
+                {
+                    <th class="text-center">@day.ToString("ddd")<br /><small class="text-muted">@day.ToString("dd.MM")</small></th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var employee in employees)
+            {
+                <tr>
+                    <td><strong>@employee.FullName</strong><br /><small class="text-muted">@employee.Role</small></td>
+                    @foreach (var day in WeekDays)
+                    {
+                        var cellShifts = ShiftsFor(employee.Id, day);
+                        <td class="text-center">
+                            @foreach (var s in cellShifts)
+                            {
+                                <div class="shift-chip" title="@s.Notes">
+                                    @s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm")
+                                    <button class="btn-close btn-close-sm" @onclick="() => DeleteShift(s)"></button>
+                                </div>
+                            }
+                            <button class="btn btn-sm btn-outline-secondary mt-1" @onclick="() => ShowAdd(employee, day)">+</button>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@* Add-shift modal *@
+@if (addEmployee is not null)
+{
+    <div class="modal-backdrop-custom">
+        <div class="card shadow modal-card">
+            <div class="card-body">
+                <h5 class="card-title">Add shift — @addEmployee.FullName</h5>
+                <p class="text-muted">@addDate.ToString("dddd, dd MMM yyyy")</p>
+                <div class="row">
+                    <div class="col mb-2">
+                        <label class="form-label">Start</label>
+                        <input type="time" class="form-control" @bind="addStart" />
+                    </div>
+                    <div class="col mb-2">
+                        <label class="form-label">End</label>
+                        <input type="time" class="form-control" @bind="addEnd" />
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Notes (optional)</label>
+                    <input class="form-control" @bind="addNotes" />
+                </div>
+                @if (addError is not null)
+                {
+                    <div class="alert alert-danger py-1">@addError</div>
+                }
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-secondary" @onclick="() => addEmployee = null">Cancel</button>
+                    <button class="btn btn-success" @onclick="SaveShift">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<EmployeeDto> employees = [];
+    private List<ShiftDto> shifts = [];
+    private DateOnly weekStart;
+    private bool loading = true;
+    private string? error;
+
+    private EmployeeDto? addEmployee;
+    private DateOnly addDate;
+    private TimeOnly addStart = new(8, 0);
+    private TimeOnly addEnd = new(16, 0);
+    private string? addNotes;
+    private string? addError;
+
+    private IEnumerable<DateOnly> WeekDays => Enumerable.Range(0, 7).Select(weekStart.AddDays);
+
+    protected override async Task OnInitializedAsync()
+    {
+        weekStart = MondayOf(DateOnly.FromDateTime(DateTime.Today));
+        await LoadEmployeesAsync();
+        await LoadWeekAsync();
+    }
+
+    private static DateOnly MondayOf(DateOnly date) => date.AddDays(-(((int)date.DayOfWeek + 6) % 7));
+
+    private async Task LoadEmployeesAsync()
+    {
+        try
+        {
+            employees = await Api.GetEmployeesAsync();
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not load employees: {ex.Message}";
+        }
+    }
+
+    private async Task LoadWeekAsync()
+    {
+        loading = true;
+        try
+        {
+            shifts = await Api.GetWeekShiftsAsync(weekStart);
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not load shifts: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private IEnumerable<ShiftDto> ShiftsFor(int employeeId, DateOnly day) =>
+        shifts.Where(s => s.EmployeeId == employeeId && s.Date == day).OrderBy(s => s.StartTime);
+
+    private async Task ShiftWeek(int days)
+    {
+        weekStart = weekStart.AddDays(days);
+        await LoadWeekAsync();
+    }
+
+    private async Task GoToThisWeek()
+    {
+        weekStart = MondayOf(DateOnly.FromDateTime(DateTime.Today));
+        await LoadWeekAsync();
+    }
+
+    private void ShowAdd(EmployeeDto employee, DateOnly day)
+    {
+        addEmployee = employee;
+        addDate = day;
+        addStart = new TimeOnly(8, 0);
+        addEnd = new TimeOnly(16, 0);
+        addNotes = null;
+        addError = null;
+    }
+
+    private async Task SaveShift()
+    {
+        if (addEmployee is null) return;
+        if (addEnd <= addStart)
+        {
+            addError = "End time must be after start time.";
+            return;
+        }
+
+        var (success, err) = await Api.CreateShiftAsync(new CreateShiftRequest(
+            addEmployee.Id, addDate, addStart, addEnd, addNotes));
+        if (!success)
+        {
+            addError = err;
+            return;
+        }
+
+        addEmployee = null;
+        await LoadWeekAsync();
+    }
+
+    private async Task DeleteShift(ShiftDto shift)
+    {
+        await Api.DeleteShiftAsync(shift.Id);
+        await LoadWeekAsync();
+    }
+}
