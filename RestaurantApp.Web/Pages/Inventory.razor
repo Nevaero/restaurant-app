@@ -1,13 +1,14 @@
 @page "/inventory"
 @inject ApiClient Api
+@inject LocalizationService Loc
 
-<PageTitle>Inventaire</PageTitle>
+<PageTitle>@Loc["inventory.title"]</PageTitle>
 
-<h1>Inventaire</h1>
+<h1>@Loc["inventory.title"]</h1>
 
 @if (loading)
 {
-    <p><em>Loading…</em></p>
+    <p><em>@Loc["common.loading"]</em></p>
 }
 else if (error is not null)
 {
@@ -16,19 +17,19 @@ else if (error is not null)
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <span class="text-muted">@items.Count item(s), @items.Count(i => i.IsLow) low on stock</span>
-        <button class="btn btn-success" @onclick="ShowAddForm">+ Add item</button>
+        <span class="text-muted">@items.Count @Loc["inventory.summary"], @items.Count(i => i.IsLow) @Loc["inventory.lowCount"]</span>
+        <button class="btn btn-success" @onclick="ShowAddForm">@Loc["inventory.addItem"]</button>
     </div>
 
     <table class="table table-striped align-middle">
         <thead>
             <tr>
-                <th>Name</th>
-                <th class="text-end">Quantity</th>
-                <th>Unit</th>
-                <th class="text-end">Low-stock threshold</th>
-                <th>Allergens</th>
-                <th>Status</th>
+                <th>@Loc["common.name"]</th>
+                <th class="text-end">@Loc["inventory.quantity"]</th>
+                <th>@Loc["inventory.unit"]</th>
+                <th class="text-end">@Loc["inventory.threshold"]</th>
+                <th>@Loc["inventory.allergens"]</th>
+                <th>@Loc["common.status"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -49,16 +50,16 @@ else
                     <td>
                         @if (item.IsLow)
                         {
-                            <span class="badge bg-danger">Low</span>
+                            <span class="badge bg-danger">@Loc["inventory.low"]</span>
                         }
                         else
                         {
-                            <span class="badge bg-success">OK</span>
+                            <span class="badge bg-success">@Loc["inventory.ok"]</span>
                         }
                     </td>
                     <td class="text-end text-nowrap">
-                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowEdit(item)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(item)">Delete</button>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowEdit(item)">@Loc["common.edit"]</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(item)">@Loc["common.delete"]</button>
                     </td>
                 </tr>
             }
@@ -71,27 +72,27 @@ else
     <div class="modal-backdrop-custom">
         <div class="card shadow modal-card">
             <div class="card-body">
-                <h5 class="card-title">@(editId is null ? "Add item" : "Edit item")</h5>
+                <h5 class="card-title">@(editId is null ? Loc["inventory.addTitle"] : Loc["inventory.editTitle"])</h5>
                 <div class="mb-2">
-                    <label class="form-label">Name</label>
+                    <label class="form-label">@Loc["common.name"]</label>
                     <input class="form-control" @bind="fName" />
                 </div>
                 <div class="row">
                     <div class="col mb-2">
-                        <label class="form-label">Quantity</label>
+                        <label class="form-label">@Loc["inventory.quantity"]</label>
                         <input type="number" step="0.001" class="form-control" @bind="fQuantity" />
                     </div>
                     <div class="col mb-2">
-                        <label class="form-label">Unit</label>
+                        <label class="form-label">@Loc["inventory.unit"]</label>
                         <input class="form-control" @bind="fUnit" placeholder="kg" />
                     </div>
                     <div class="col mb-2">
-                        <label class="form-label">Low-stock threshold</label>
+                        <label class="form-label">@Loc["inventory.threshold"]</label>
                         <input type="number" step="0.001" class="form-control" @bind="fThreshold" />
                     </div>
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Allergens</label>
+                    <label class="form-label">@Loc["inventory.allergens"]</label>
                     <div class="d-flex flex-wrap gap-2">
                         @foreach (var allergen in allAllergens)
                         {
@@ -109,8 +110,8 @@ else
                     <div class="alert alert-danger py-1">@formError</div>
                 }
                 <div class="d-flex justify-content-end gap-2">
-                    <button class="btn btn-secondary" @onclick="() => showForm = false">Cancel</button>
-                    <button class="btn btn-success" @onclick="SaveAsync">Save</button>
+                    <button class="btn btn-secondary" @onclick="() => showForm = false">@Loc["common.cancel"]</button>
+                    <button class="btn btn-success" @onclick="SaveAsync">@Loc["common.save"]</button>
                 </div>
             </div>
         </div>
@@ -192,7 +193,7 @@ else
     {
         if (string.IsNullOrWhiteSpace(fName))
         {
-            formError = "Name is required.";
+            formError = Loc["common.nameRequired"];
             return;
         }
 

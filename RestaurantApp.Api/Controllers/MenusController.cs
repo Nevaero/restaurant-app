@@ -84,13 +84,13 @@ public class MenusController(
 
     /// <summary>Renders the menu as an A4-landscape PDF.</summary>
     [HttpGet("{id:int}/pdf")]
-    public async Task<IResult> GetPdf(int id, CancellationToken ct)
+    public async Task<IResult> GetPdf(int id, [FromQuery] string? lang, CancellationToken ct)
     {
         var menu = await menus.GetWithRecipesAsync(id, ct);
         if (menu is null)
             return Results.NotFound();
 
-        var bytes = pdf.Generate(menu);
+        var bytes = pdf.Generate(menu, lang ?? "fr");
         var fileName = $"menu-{menu.WeekStart:yyyy-MM-dd}.pdf";
         return Results.File(bytes, "application/pdf", fileName);
     }

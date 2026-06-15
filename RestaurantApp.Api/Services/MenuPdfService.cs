@@ -9,11 +9,20 @@ namespace RestaurantApp.Api.Services;
 /// <summary>Renders a weekly menu as an A4-landscape PDF (a Monday–Sunday grid of recipes).</summary>
 public class MenuPdfService
 {
-    private static readonly string[] DayNames =
+    private static readonly string[] DayNamesEn =
         ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    private static readonly string[] DayNamesFr =
+        ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
-    public byte[] Generate(Menu menu)
+    public byte[] Generate(Menu menu, string culture = "fr")
     {
+        var fr = culture != "en";
+        var dayNames = fr ? DayNamesFr : DayNamesEn;
+        var weekOfLabel = fr ? "Semaine du" : "Week of";
+        var allergensLabel = fr ? "Allergènes" : "Allergens";
+        var containsLabel = fr ? "Contient les allergènes" : "Contains allergens";
+        var generatedLabel = fr ? "Généré le" : "Generated";
+
         var recipesByDay = menu.MenuRecipes
             .GroupBy(mr => mr.Day)
             .ToDictionary(g => g.Key, g => g.Select(mr => mr.Recipe).ToList());
@@ -32,7 +41,7 @@ public class MenuPdfService
                 {
                     col.Item().Text(menu.Name).FontSize(22).Bold();
                     col.Item().Text(
-                        $"Week of {menu.WeekStart:dd MMM yyyy} – {menu.WeekStart.AddDays(6):dd MMM yyyy}")
+                        $"{weekOfLabel} {menu.WeekStart:dd MMM yyyy} – {menu.WeekStart.AddDays(6):dd MMM yyyy}")
                         .FontSize(12).FontColor(Colors.Grey.Darken1);
                 });
 
@@ -51,7 +60,7 @@ public class MenuPdfService
                             var date = menu.WeekStart.AddDays(day);
                             header.Cell().Element(HeaderCell).Column(c =>
                             {
-                                c.Item().Text(DayNames[day]).Bold().FontColor(Colors.White);
+                                c.Item().Text(dayNames[day]).Bold().FontColor(Colors.White);
                                 c.Item().Text(date.ToString("dd.MM")).FontSize(8).FontColor(Colors.Grey.Lighten3);
                             });
                         }
@@ -76,7 +85,7 @@ public class MenuPdfService
                                     var allergens = AllergenSummary.ForRecipe(recipe);
                                     if (allergens.Count > 0)
                                     {
-                                        rc.Item().Text($"Allergens: {string.Join(", ", allergens)}")
+                                        rc.Item().Text($"{allergensLabel}: {string.Join(", ", allergens)}")
                                             .FontSize(7.5f).Italic().FontColor(Colors.Red.Darken1);
                                     }
                                 });
@@ -88,12 +97,12 @@ public class MenuPdfService
                 page.Footer().PaddingTop(8).Column(col =>
                 {
                     if (menuAllergens.Count > 0)
-                        col.Item().Text($"Contains allergens: {string.Join(", ", menuAllergens)}").FontSize(9).Bold();
+                        col.Item().Text($"{containsLabel}: {string.Join(", ", menuAllergens)}").FontSize(9).Bold();
                     if (!string.IsNullOrWhiteSpace(menu.NutritionalInfo))
                         col.Item().Text(menu.NutritionalInfo).FontSize(8).FontColor(Colors.Grey.Darken1);
                     if (!string.IsNullOrWhiteSpace(menu.Content))
                         col.Item().Text(menu.Content).FontSize(8).FontColor(Colors.Grey.Darken1);
-                    col.Item().PaddingTop(4).Text($"Generated {DateTime.Now:dd MMM yyyy HH:mm}")
+                    col.Item().PaddingTop(4).Text($"{generatedLabel} {DateTime.Now:dd MMM yyyy HH:mm}")
                         .FontSize(7).FontColor(Colors.Grey.Medium);
                 });
             });

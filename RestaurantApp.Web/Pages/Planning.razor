@@ -1,13 +1,14 @@
 @page "/planning"
 @inject ApiClient Api
+@inject LocalizationService Loc
 
-<PageTitle>Planning</PageTitle>
+<PageTitle>@Loc["nav.planning"]</PageTitle>
 
-<h1>Weekly Schedule</h1>
+<h1>@Loc["planning.title"]</h1>
 
 @if (loading)
 {
-    <p><em>Loading…</em></p>
+    <p><em>@Loc["common.loading"]</em></p>
 }
 else if (error is not null)
 {
@@ -16,22 +17,23 @@ else if (error is not null)
 else
 {
     <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-        <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(-7)">← Previous</button>
+        <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(-7)">@Loc["planning.previous"]</button>
         <strong>@weekStart.ToString("dd MMM") – @weekStart.AddDays(6).ToString("dd MMM yyyy")</strong>
-        <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(7)">Next →</button>
-        <button class="btn btn-link" @onclick="GoToThisWeek">This week</button>
+        <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(7)">@Loc["planning.next"]</button>
+        <button class="btn btn-link" @onclick="GoToThisWeek">@Loc["planning.thisWeek"]</button>
         <span class="ms-auto"></span>
-        <button class="btn btn-success" @onclick="ShowAddEmployee">+ Add employee</button>
+        <button class="btn btn-success" @onclick="ShowAddEmployee">@Loc["planning.addEmployee"]</button>
     </div>
 
     <div class="table-responsive">
         <table class="table table-bordered align-middle planning-table">
             <thead>
                 <tr>
-                    <th>Employee</th>
-                    @foreach (var day in WeekDays)
+                    <th>@Loc["planning.employee"]</th>
+                    @for (var d = 0; d < 7; d++)
                     {
-                        <th class="text-center">@day.ToString("ddd")<br /><small class="text-muted">@day.ToString("dd.MM")</small></th>
+                        var day = weekStart.AddDays(d);
+                        <th class="text-center">@Loc.Day(d)<br /><small class="text-muted">@day.ToString("dd.MM")</small></th>
                     }
                 </tr>
             </thead>
@@ -41,7 +43,7 @@ else
                     <tr>
                         <td>
                             <strong>@emp.Name</strong><br />
-                            <span class="badge @RoleBadge(emp.Role)">@emp.Role</span>
+                            <span class="badge @RoleBadge(emp.Role)">@Loc.Role(emp.Role)</span>
                         </td>
                         @foreach (var day in WeekDays)
                         {
@@ -62,31 +64,31 @@ else
         </table>
     </div>
 
-    <h2 class="h5 mt-4">Week summary</h2>
+    <h2 class="h5 mt-4">@Loc["planning.summary"]</h2>
     <table class="table table-sm w-auto">
         <thead>
-            <tr><th>Employee</th><th>Role</th><th class="text-end">Hours</th><th class="text-end">Labour cost</th><th></th></tr>
+            <tr><th>@Loc["planning.employee"]</th><th>@Loc["planning.role"]</th><th class="text-end">@Loc["planning.hours"]</th><th class="text-end">@Loc["planning.laborCost"]</th><th></th></tr>
         </thead>
         <tbody>
             @foreach (var emp in summaries)
             {
                 <tr class="@(emp.IsOvertime ? "table-danger" : null)">
                     <td>@emp.Name</td>
-                    <td>@emp.Role</td>
+                    <td>@Loc.Role(emp.Role)</td>
                     <td class="text-end">@emp.TotalHours.ToString("0.##")</td>
                     <td class="text-end">@emp.LaborCost.ToString("0.00")</td>
-                    <td>@if (emp.IsOvertime) { <span class="badge bg-danger">Overtime</span> }</td>
+                    <td>@if (emp.IsOvertime) { <span class="badge bg-danger">@Loc["planning.overtime"]</span> }</td>
                 </tr>
             }
             <tr class="fw-bold border-top">
-                <td colspan="2">Total</td>
+                <td colspan="2">@Loc["planning.total"]</td>
                 <td class="text-end">@summaries.Sum(s => s.TotalHours).ToString("0.##")</td>
                 <td class="text-end">@summaries.Sum(s => s.LaborCost).ToString("0.00")</td>
                 <td></td>
             </tr>
         </tbody>
     </table>
-    <p class="text-muted small">Overtime is flagged above @SchedulingThreshold h/week.</p>
+    <p class="text-muted small">@Loc["planning.overtimeNote"]</p>
 }
 
 @* Add-shift modal *@
@@ -95,20 +97,20 @@ else
     <div class="modal-backdrop-custom">
         <div class="card shadow modal-card">
             <div class="card-body">
-                <h5 class="card-title">Add shift — @addEmployee.Name</h5>
+                <h5 class="card-title">@Loc["planning.addShift"] — @addEmployee.Name</h5>
                 <p class="text-muted">@addDate.ToString("dddd, dd MMM yyyy")</p>
                 <div class="row">
                     <div class="col mb-2">
-                        <label class="form-label">Start</label>
+                        <label class="form-label">@Loc["planning.start"]</label>
                         <input type="time" class="form-control" @bind="addStart" />
                     </div>
                     <div class="col mb-2">
-                        <label class="form-label">End</label>
+                        <label class="form-label">@Loc["planning.end"]</label>
                         <input type="time" class="form-control" @bind="addEnd" />
                     </div>
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Notes (optional)</label>
+                    <label class="form-label">@Loc["planning.notesOptional"]</label>
                     <input class="form-control" @bind="addNotes" />
                 </div>
                 @if (shiftError is not null)
@@ -116,8 +118,8 @@ else
                     <div class="alert alert-danger py-1">@shiftError</div>
                 }
                 <div class="d-flex justify-content-end gap-2">
-                    <button class="btn btn-secondary" @onclick="() => addEmployee = null">Cancel</button>
-                    <button class="btn btn-success" @onclick="SaveShift">Add</button>
+                    <button class="btn btn-secondary" @onclick="() => addEmployee = null">@Loc["common.cancel"]</button>
+                    <button class="btn btn-success" @onclick="SaveShift">@Loc["common.add"]</button>
                 </div>
             </div>
         </div>
@@ -130,29 +132,29 @@ else
     <div class="modal-backdrop-custom">
         <div class="card shadow modal-card">
             <div class="card-body">
-                <h5 class="card-title">Add employee</h5>
+                <h5 class="card-title">@Loc["planning.addEmployee"]</h5>
                 <div class="row">
                     <div class="col mb-2">
-                        <label class="form-label">First name</label>
+                        <label class="form-label">@Loc["planning.firstName"]</label>
                         <input class="form-control" @bind="empFirst" />
                     </div>
                     <div class="col mb-2">
-                        <label class="form-label">Last name</label>
+                        <label class="form-label">@Loc["planning.lastName"]</label>
                         <input class="form-control" @bind="empLast" />
                     </div>
                 </div>
                 <div class="row">
                     <div class="col mb-2">
-                        <label class="form-label">Role</label>
+                        <label class="form-label">@Loc["planning.role"]</label>
                         <select class="form-select" @bind="empRole">
                             @foreach (var role in Roles)
                             {
-                                <option value="@role">@role</option>
+                                <option value="@role">@Loc.Role(role)</option>
                             }
                         </select>
                     </div>
                     <div class="col mb-2">
-                        <label class="form-label">Hourly rate</label>
+                        <label class="form-label">@Loc["planning.hourlyRate"]</label>
                         <input type="number" step="0.01" class="form-control" @bind="empRate" />
                     </div>
                 </div>
@@ -161,8 +163,8 @@ else
                     <div class="alert alert-danger py-1">@empError</div>
                 }
                 <div class="d-flex justify-content-end gap-2">
-                    <button class="btn btn-secondary" @onclick="() => showAddEmployee = false">Cancel</button>
-                    <button class="btn btn-success" @onclick="SaveEmployee">Add</button>
+                    <button class="btn btn-secondary" @onclick="() => showAddEmployee = false">@Loc["common.cancel"]</button>
+                    <button class="btn btn-success" @onclick="SaveEmployee">@Loc["common.add"]</button>
                 </div>
             </div>
         </div>
@@ -171,7 +173,6 @@ else
 
 @code {
     private static readonly string[] Roles = ["Cook", "Clerk", "Server", "Manager"];
-    private const decimal SchedulingThreshold = 42m;
 
     private DateOnly weekStart;
     private List<ShiftDto> shifts = [];

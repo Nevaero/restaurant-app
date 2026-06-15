@@ -1,0 +1,17 @@
+@inject LocalizationService Loc
+@inject IJSRuntime JS
+
+<div class="btn-group btn-group-sm" role="group" aria-label="@Loc["nav.language"]">
+    <button type="button" class="btn @(Loc.IsFrench ? "btn-primary" : "btn-outline-primary")"
+            @onclick="@(() => SetAsync(LocalizationService.French))">FR</button>
+    <button type="button" class="btn @(!Loc.IsFrench ? "btn-primary" : "btn-outline-primary")"
+            @onclick="@(() => SetAsync(LocalizationService.English))">EN</button>
+</div>
+
+@code {
+    private async Task SetAsync(string culture)
+    {
+        Loc.SetCulture(culture);
+        await JS.InvokeVoidAsync("localStorage.setItem", "culture", culture);
+    }
+}

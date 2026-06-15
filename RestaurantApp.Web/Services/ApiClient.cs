@@ -8,7 +8,8 @@ namespace RestaurantApp.Web.Services;
 public class ApiClient(HttpClient http)
 {
     /// <summary>Absolute URL for a menu's PDF (used as a download link target).</summary>
-    public string MenuPdfUrl(int menuId) => new Uri(http.BaseAddress!, $"api/menus/{menuId}/pdf").ToString();
+    public string MenuPdfUrl(int menuId, string culture) =>
+        new Uri(http.BaseAddress!, $"api/menus/{menuId}/pdf?lang={culture}").ToString();
 
     // Menus
     public async Task<List<MenuSummaryDto>> GetMenusAsync() =>

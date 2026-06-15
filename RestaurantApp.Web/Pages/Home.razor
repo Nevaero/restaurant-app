@@ -1,18 +1,19 @@
 @page "/"
+@inject LocalizationService Loc
 
 <PageTitle>RestaurantApp</PageTitle>
 
 <h1>RestaurantApp</h1>
 
-<p class="lead">A lightweight restaurant ERP — weekly menus, recipes, staff planning and inventory.</p>
+<p class="lead">@Loc["app.tagline"]</p>
 
 <div class="row g-4 mt-2">
     <div class="col-sm-6 col-lg-3">
         <a class="card h-100 text-decoration-none text-reset home-card" href="menus">
             <div class="card-body">
                 <div class="home-card-icon">🍽️</div>
-                <h5 class="card-title">Menu</h5>
-                <p class="card-text text-muted">Plan weekly menus, load recipes onto days, and export an A4 PDF.</p>
+                <h5 class="card-title">@Loc["nav.menu"]</h5>
+                <p class="card-text text-muted">@Loc["home.menu.desc"]</p>
             </div>
         </a>
     </div>
@@ -20,8 +21,8 @@
         <a class="card h-100 text-decoration-none text-reset home-card" href="recipes">
             <div class="card-body">
                 <div class="home-card-icon">📖</div>
-                <h5 class="card-title">Recipes</h5>
-                <p class="card-text text-muted">Build recipes from inventory ingredients; allergens roll up automatically.</p>
+                <h5 class="card-title">@Loc["nav.recipes"]</h5>
+                <p class="card-text text-muted">@Loc["home.recipes.desc"]</p>
             </div>
         </a>
     </div>
@@ -29,8 +30,8 @@
         <a class="card h-100 text-decoration-none text-reset home-card" href="planning">
             <div class="card-body">
                 <div class="home-card-icon">📅</div>
-                <h5 class="card-title">Planning</h5>
-                <p class="card-text text-muted">Schedule cooks and clerks, with hours, labour cost and overtime alerts.</p>
+                <h5 class="card-title">@Loc["nav.planning"]</h5>
+                <p class="card-text text-muted">@Loc["home.planning.desc"]</p>
             </div>
         </a>
     </div>
@@ -38,8 +39,8 @@
         <a class="card h-100 text-decoration-none text-reset home-card" href="inventory">
             <div class="card-body">
                 <div class="home-card-icon">📦</div>
-                <h5 class="card-title">Inventaire</h5>
-                <p class="card-text text-muted">Track ingredients, quantities and allergens, with low-stock alerts.</p>
+                <h5 class="card-title">@Loc["nav.inventory"]</h5>
+                <p class="card-text text-muted">@Loc["home.inventory.desc"]</p>
             </div>
         </a>
     </div>

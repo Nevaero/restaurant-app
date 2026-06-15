@@ -1,46 +1,47 @@
 @page "/menus/{Id:int}"
 @inject ApiClient Api
+@inject LocalizationService Loc
 
-<PageTitle>Edit menu</PageTitle>
+<PageTitle>@Loc["menuEdit.title"]</PageTitle>
 
 @if (loading)
 {
-    <p><em>Loading…</em></p>
+    <p><em>@Loc["common.loading"]</em></p>
 }
 else if (notFound)
 {
-    <div class="alert alert-warning">Menu not found. <a href="menus">Back to menus</a></div>
+    <div class="alert alert-warning">@Loc["menuEdit.notFound"] <a href="menus">@Loc["common.back"]</a></div>
 }
 else
 {
     <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-        <a class="btn btn-outline-secondary btn-sm" href="menus">← Back</a>
-        <h1 class="m-0">Edit menu</h1>
+        <a class="btn btn-outline-secondary btn-sm" href="menus">← @Loc["common.back"]</a>
+        <h1 class="m-0">@Loc["menuEdit.title"]</h1>
         <span class="ms-auto"></span>
-        <a class="btn btn-outline-danger" href="@Api.MenuPdfUrl(Id)" target="_blank">⤓ Download PDF (A4)</a>
+        <a class="btn btn-outline-danger" href="@Api.MenuPdfUrl(Id, Loc.Culture)" target="_blank">@Loc["menuEdit.downloadPdf"]</a>
     </div>
 
     <div class="row g-3">
         <div class="col-md-8">
-            <label class="form-label">Name</label>
+            <label class="form-label">@Loc["common.name"]</label>
             <input class="form-control" @bind="name" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">Week starting (Monday)</label>
+            <label class="form-label">@Loc["menus.weekStarting"]</label>
             <input type="date" class="form-control" @bind="weekDate" />
         </div>
     </div>
 
-    <h2 class="h5 mt-4">Recipes</h2>
-    <p class="text-muted small">Assign recipes to days of the week. The PDF renders them as a Monday–Sunday grid.</p>
+    <h2 class="h5 mt-4">@Loc["menuEdit.recipes"]</h2>
+    <p class="text-muted small">@Loc["menuEdit.recipesHint"]</p>
     @if (assignments.Count == 0)
     {
-        <p class="text-muted">No recipes assigned yet.</p>
+        <p class="text-muted">@Loc["menuEdit.noRecipes"]</p>
     }
     else
     {
         <table class="table table-sm w-auto">
-            <thead><tr><th>Day</th><th>Recipe</th><th></th></tr></thead>
+            <thead><tr><th>@Loc["menuEdit.day"]</th><th>@Loc["menuEdit.recipe"]</th><th></th></tr></thead>
             <tbody>
                 @foreach (var line in assignments.OrderBy(a => a.Day))
                 {
@@ -50,13 +51,13 @@ else
                                 @for (var d = 0; d < 7; d++)
                                 {
                                     var day = d;
-                                    <option value="@day">@DayNames[day]</option>
+                                    <option value="@day">@Loc.Day(day)</option>
                                 }
                             </select>
                         </td>
                         <td>
                             <select class="form-select form-select-sm" @bind="line.RecipeId">
-                                <option value="0" disabled>Select…</option>
+                                <option value="0" disabled>@Loc["common.select"]</option>
                                 @foreach (var r in recipeCatalog)
                                 {
                                     <option value="@r.Id">@r.Name</option>
@@ -69,12 +70,12 @@ else
             </tbody>
         </table>
     }
-    <button class="btn btn-sm btn-outline-secondary" @onclick="() => assignments.Add(new())">+ Add recipe to a day</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="() => assignments.Add(new())">@Loc["menuEdit.addRecipe"]</button>
 
     @if (menuAllergens.Count > 0)
     {
         <div class="mt-3">
-            <strong>Allergens across this menu:</strong>
+            <strong>@Loc["menuEdit.allergensAcross"]</strong>
             @foreach (var a in menuAllergens)
             {
                 <span class="badge bg-info text-dark ms-1">@a</span>
@@ -84,18 +85,18 @@ else
 
     <div class="row g-3 mt-1">
         <div class="col-12">
-            <label class="form-label">Notes</label>
+            <label class="form-label">@Loc["menuEdit.notes"]</label>
             <textarea class="form-control" rows="3" @bind="content"></textarea>
         </div>
         <div class="col-12">
-            <label class="form-label">Nutritional values</label>
+            <label class="form-label">@Loc["menuEdit.nutrition"]</label>
             <textarea class="form-control" rows="3" @bind="nutrition"></textarea>
         </div>
     </div>
 
     @if (saved)
     {
-        <div class="alert alert-success mt-3 py-2">Saved.</div>
+        <div class="alert alert-success mt-3 py-2">@Loc["menuEdit.saved"]</div>
     }
     @if (saveError is not null)
     {
@@ -103,15 +104,12 @@ else
     }
 
     <div class="d-flex gap-2 mt-3">
-        <button class="btn btn-primary" @onclick="SaveAsync">Save</button>
-        <a class="btn btn-secondary" href="menus">Done</a>
+        <button class="btn btn-primary" @onclick="SaveAsync">@Loc["common.save"]</button>
+        <a class="btn btn-secondary" href="menus">@Loc["common.done"]</a>
     </div>
 }
 
 @code {
-    private static readonly string[] DayNames =
-        ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
     [Parameter] public int Id { get; set; }
 
     private bool loading = true;
@@ -169,7 +167,7 @@ else
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            saveError = "Name is required.";
+            saveError = Loc["common.nameRequired"];
             return;
         }
 

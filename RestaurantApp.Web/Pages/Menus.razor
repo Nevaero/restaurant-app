@@ -1,14 +1,15 @@
 @page "/menus"
 @inject ApiClient Api
 @inject NavigationManager Nav
+@inject LocalizationService Loc
 
-<PageTitle>Menu</PageTitle>
+<PageTitle>@Loc["nav.menu"]</PageTitle>
 
-<h1>Weekly Menus</h1>
+<h1>@Loc["menus.title"]</h1>
 
 @if (loading)
 {
-    <p><em>Loading…</em></p>
+    <p><em>@Loc["common.loading"]</em></p>
 }
 else if (error is not null)
 {
@@ -17,20 +18,20 @@ else if (error is not null)
 else
 {
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" @onclick="ShowCreateForm">+ New menu</button>
+        <button class="btn btn-success" @onclick="ShowCreateForm">@Loc["menus.new"]</button>
     </div>
 
     @if (menus.Count == 0)
     {
-        <p class="text-muted">No menus yet. Create one to get started.</p>
+        <p class="text-muted">@Loc["menus.empty"]</p>
     }
     else
     {
         <table class="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th>Week of (Monday)</th>
-                    <th>Name</th>
+                    <th>@Loc["menus.weekOf"]</th>
+                    <th>@Loc["common.name"]</th>
                     <th></th>
                 </tr>
             </thead>
@@ -41,8 +42,8 @@ else
                         <td>@menu.WeekStart.ToString("dd MMM yyyy")</td>
                         <td>@menu.Name</td>
                         <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary" href="menus/@menu.Id">Open</a>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteMenu(menu)">Delete</button>
+                            <a class="btn btn-sm btn-outline-primary" href="menus/@menu.Id">@Loc["common.open"]</a>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteMenu(menu)">@Loc["common.delete"]</button>
                         </td>
                     </tr>
                 }
@@ -57,23 +58,23 @@ else
     <div class="modal-backdrop-custom">
         <div class="card shadow modal-card">
             <div class="card-body">
-                <h5 class="card-title">New menu</h5>
+                <h5 class="card-title">@Loc["menus.newMenu"]</h5>
                 <div class="mb-2">
-                    <label class="form-label">Name</label>
-                    <input class="form-control" @bind="newName" placeholder="e.g. Spring lunch menu" />
+                    <label class="form-label">@Loc["common.name"]</label>
+                    <input class="form-control" @bind="newName" />
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Week starting (Monday)</label>
+                    <label class="form-label">@Loc["menus.weekStarting"]</label>
                     <input type="date" class="form-control" @bind="newMonday" />
-                    <div class="form-text">Any date you pick is snapped to that week's Monday.</div>
+                    <div class="form-text">@Loc["menus.snapHint"]</div>
                 </div>
                 @if (createError is not null)
                 {
                     <div class="alert alert-danger py-1">@createError</div>
                 }
                 <div class="d-flex justify-content-end gap-2">
-                    <button class="btn btn-secondary" @onclick="() => showCreate = false">Cancel</button>
-                    <button class="btn btn-success" @onclick="SaveNew">Create &amp; edit</button>
+                    <button class="btn btn-secondary" @onclick="() => showCreate = false">@Loc["common.cancel"]</button>
+                    <button class="btn btn-success" @onclick="SaveNew">@Loc["menus.createEdit"]</button>
                 </div>
             </div>
         </div>
@@ -122,7 +123,7 @@ else
     {
         if (string.IsNullOrWhiteSpace(newName))
         {
-            createError = "Name is required.";
+            createError = Loc["common.nameRequired"];
             return;
         }
 

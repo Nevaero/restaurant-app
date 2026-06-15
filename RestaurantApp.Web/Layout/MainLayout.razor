@@ -1,4 +1,8 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject LocalizationService Loc
+@inject IJSRuntime JS
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -6,7 +10,8 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <LanguageSwitcher />
+            <a class="ms-3" href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
 
         <article class="content px-4">
@@ -14,3 +19,19 @@
         </article>
     </main>
 </div>
+
+@code {
+    protected override void OnInitialized() => Loc.OnChange += StateHasChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Restore the previously chosen language (French remains the default).
+        var stored = await JS.InvokeAsync<string?>("localStorage.getItem", "culture");
+        if (!string.IsNullOrEmpty(stored))
+            Loc.SetCulture(stored);
+    }
+
+    public void Dispose() => Loc.OnChange -= StateHasChanged;
+}

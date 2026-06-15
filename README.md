@@ -20,6 +20,10 @@ The homepage is a card grid leading to the modules:
 
 Menu PDFs are generated server-side with **QuestPDF**.
 
+The UI is **bilingual (French / English)** with **French as the default**. A language switcher
+in the top bar flips the whole UI live (no reload) and remembers the choice in `localStorage`;
+the menu PDF is generated in the selected language too.
+
 ## Tech stack
 
 | Layer        | Technology                                       |

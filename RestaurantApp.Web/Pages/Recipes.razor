@@ -1,20 +1,22 @@
 @page "/recipes"
+@page "/recettes"
 @inject ApiClient Api
+@inject LocalizationService Loc
 
-<PageTitle>Recipes</PageTitle>
+<PageTitle>@Loc["nav.recipes"]</PageTitle>
 
-<h1>Recipes</h1>
+<h1>@Loc["recipes.title"]</h1>
 
 <div class="d-flex gap-2 mb-3 flex-wrap">
-    <input class="form-control" style="max-width: 320px" placeholder="Search recipes or ingredients…"
+    <input class="form-control" style="max-width: 320px" placeholder="@Loc["recipes.search"]"
            @bind="search" @bind:event="oninput" @bind:after="LoadAsync" />
     <span class="ms-auto"></span>
-    <button class="btn btn-success" @onclick="ShowAddForm">+ New recipe</button>
+    <button class="btn btn-success" @onclick="ShowAddForm">@Loc["recipes.new"]</button>
 </div>
 
 @if (loading)
 {
-    <p><em>Loading…</em></p>
+    <p><em>@Loc["common.loading"]</em></p>
 }
 else if (error is not null)
 {
@@ -22,17 +24,17 @@ else if (error is not null)
 }
 else if (recipes.Count == 0)
 {
-    <p class="text-muted">No recipes found.</p>
+    <p class="text-muted">@Loc["recipes.none"]</p>
 }
 else
 {
     <table class="table table-striped align-middle">
         <thead>
             <tr>
-                <th>Name</th>
-                <th class="text-end">Servings</th>
-                <th class="text-end">Ingredients</th>
-                <th>Allergens</th>
+                <th>@Loc["common.name"]</th>
+                <th class="text-end">@Loc["recipes.servings"]</th>
+                <th class="text-end">@Loc["recipes.ingredients"]</th>
+                <th>@Loc["recipes.allergens"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -50,8 +52,8 @@ else
                         }
                     </td>
                     <td class="text-end text-nowrap">
-                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowEdit(recipe.Id)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(recipe)">Delete</button>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowEdit(recipe.Id)">@Loc["common.edit"]</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(recipe)">@Loc["common.delete"]</button>
                     </td>
                 </tr>
             }
@@ -64,26 +66,26 @@ else
     <div class="modal-backdrop-custom">
         <div class="card shadow modal-card modal-card-wide">
             <div class="card-body">
-                <h5 class="card-title">@(editId is null ? "New recipe" : "Edit recipe")</h5>
+                <h5 class="card-title">@(editId is null ? Loc["recipes.newRecipe"] : Loc["recipes.editRecipe"])</h5>
                 <div class="row">
                     <div class="col-md-8 mb-2">
-                        <label class="form-label">Name</label>
+                        <label class="form-label">@Loc["common.name"]</label>
                         <input class="form-control" @bind="fName" />
                     </div>
                     <div class="col-md-4 mb-2">
-                        <label class="form-label">Servings</label>
+                        <label class="form-label">@Loc["recipes.servings"]</label>
                         <input type="number" min="1" class="form-control" @bind="fServings" />
                     </div>
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Instructions</label>
+                    <label class="form-label">@Loc["recipes.instructions"]</label>
                     <textarea class="form-control" rows="4" @bind="fInstructions"></textarea>
                 </div>
 
-                <h6 class="mt-2">Ingredients</h6>
+                <h6 class="mt-2">@Loc["recipes.ingredients"]</h6>
                 <table class="table table-sm">
                     <thead>
-                        <tr><th>Ingredient</th><th style="width: 140px">Quantity</th><th>Unit</th><th></th></tr>
+                        <tr><th>@Loc["recipes.ingredient"]</th><th style="width: 140px">@Loc["recipes.quantity"]</th><th>@Loc["recipes.unit"]</th><th></th></tr>
                     </thead>
                     <tbody>
                         @foreach (var line in fLines)
@@ -91,7 +93,7 @@ else
                             <tr>
                                 <td>
                                     <select class="form-select form-select-sm" @bind="line.IngredientId">
-                                        <option value="0" disabled>Select…</option>
+                                        <option value="0" disabled>@Loc["common.select"]</option>
                                         @foreach (var ing in ingredients)
                                         {
                                             <option value="@ing.Id">@ing.Name</option>
@@ -105,15 +107,15 @@ else
                         }
                     </tbody>
                 </table>
-                <button class="btn btn-sm btn-outline-secondary mb-2" @onclick="() => fLines.Add(new())">+ Add ingredient</button>
+                <button class="btn btn-sm btn-outline-secondary mb-2" @onclick="() => fLines.Add(new())">@Loc["recipes.addIngredient"]</button>
 
                 @if (formError is not null)
                 {
                     <div class="alert alert-danger py-1">@formError</div>
                 }
                 <div class="d-flex justify-content-end gap-2">
-                    <button class="btn btn-secondary" @onclick="() => showForm = false">Cancel</button>
-                    <button class="btn btn-success" @onclick="SaveAsync">Save</button>
+                    <button class="btn btn-secondary" @onclick="() => showForm = false">@Loc["common.cancel"]</button>
+                    <button class="btn btn-success" @onclick="SaveAsync">@Loc["common.save"]</button>
                 </div>
             </div>
         </div>
@@ -201,7 +203,7 @@ else
     {
         if (string.IsNullOrWhiteSpace(fName))
         {
-            formError = "Name is required.";
+            formError = Loc["common.nameRequired"];
             return;
         }
 
