@@ -23,7 +23,8 @@
     --ra-ink: #283330;       /* text */
     --ra-muted: #6B776F;
 
-    --ra-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --ra-font: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --ra-font-display: 'Bricolage Grotesque', 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --ra-radius: 0.65rem;
 
     /* Nudge a few Bootstrap globals where they help. */
@@ -42,9 +43,10 @@ html, body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+    font-family: var(--ra-font-display);
     color: var(--ra-green-900);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
 }
 
 h1 { font-weight: 700; }
