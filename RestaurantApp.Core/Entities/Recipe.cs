@@ -1,12 +1,20 @@
 namespace RestaurantApp.Core.Entities;
 
-/// <summary>A dish recipe built from inventory ingredients.</summary>
+/// <summary>A dish recipe built from inventory ingredients, with per-serving nutrition.</summary>
 public class Recipe
 {
     public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;        // e.g. "Pasta Bolognese"
+    public string Name { get; set; } = string.Empty;        // e.g. "Pâtes à la bolognaise"
     public string Instructions { get; set; } = string.Empty; // preparation steps
     public int Servings { get; set; } = 1;                   // yields this many servings
+
+    // Nutrition per serving.
+    public int Calories { get; set; }                        // kcal
+    public decimal Protein { get; set; }                     // g
+    public decimal Carbohydrates { get; set; }               // g
+    public decimal Fat { get; set; }                         // g
+    public decimal Sugars { get; set; }                      // g
+
     public ICollection<RecipeIngredient> Ingredients { get; set; } = [];
 }
 

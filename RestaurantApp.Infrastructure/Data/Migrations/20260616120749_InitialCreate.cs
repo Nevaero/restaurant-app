@@ -63,8 +63,7 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 120, nullable: false),
                     WeekStart = table.Column<string>(type: "TEXT", nullable: false),
-                    Content = table.Column<string>(type: "TEXT", maxLength: 8000, nullable: false),
-                    NutritionalInfo = table.Column<string>(type: "TEXT", maxLength: 4000, nullable: false)
+                    Content = table.Column<string>(type: "TEXT", maxLength: 8000, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -79,7 +78,12 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 120, nullable: false),
                     Instructions = table.Column<string>(type: "TEXT", maxLength: 8000, nullable: false),
-                    Servings = table.Column<int>(type: "INTEGER", nullable: false)
+                    Servings = table.Column<int>(type: "INTEGER", nullable: false),
+                    Calories = table.Column<int>(type: "INTEGER", nullable: false),
+                    Protein = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Carbohydrates = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Fat = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Sugars = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -134,30 +138,36 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MenuRecipes",
+                name: "MenuDays",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     MenuId = table.Column<int>(type: "INTEGER", nullable: false),
-                    RecipeId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Day = table.Column<int>(type: "INTEGER", nullable: false)
+                    Day = table.Column<int>(type: "INTEGER", nullable: false),
+                    Dish = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    RecipeId = table.Column<int>(type: "INTEGER", nullable: true),
+                    Calories = table.Column<int>(type: "INTEGER", nullable: false),
+                    Protein = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Carbohydrates = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Fat = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Sugars = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MenuRecipes", x => x.Id);
+                    table.PrimaryKey("PK_MenuDays", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MenuRecipes_Menus_MenuId",
+                        name: "FK_MenuDays_Menus_MenuId",
                         column: x => x.MenuId,
                         principalTable: "Menus",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_MenuRecipes_Recipes_RecipeId",
+                        name: "FK_MenuDays_Recipes_RecipeId",
                         column: x => x.RecipeId,
                         principalTable: "Recipes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -199,13 +209,13 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                 column: "IngredientsId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MenuRecipes_MenuId",
-                table: "MenuRecipes",
+                name: "IX_MenuDays_MenuId",
+                table: "MenuDays",
                 column: "MenuId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MenuRecipes_RecipeId",
-                table: "MenuRecipes",
+                name: "IX_MenuDays_RecipeId",
+                table: "MenuDays",
                 column: "RecipeId");
 
             migrationBuilder.CreateIndex(
@@ -231,7 +241,7 @@ namespace RestaurantApp.Infrastructure.Data.Migrations
                 name: "IngredientAllergens");
 
             migrationBuilder.DropTable(
-                name: "MenuRecipes");
+                name: "MenuDays");
 
             migrationBuilder.DropTable(
                 name: "RecipeIngredients");

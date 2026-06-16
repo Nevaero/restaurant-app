@@ -7,7 +7,7 @@ namespace RestaurantApp.Infrastructure.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Menu> Menus => Set<Menu>();
-    public DbSet<MenuRecipe> MenuRecipes => Set<MenuRecipe>();
+    public DbSet<MenuDay> MenuDays => Set<MenuDay>();
     public DbSet<Recipe> Recipes => Set<Recipe>();
     public DbSet<RecipeIngredient> RecipeIngredients => Set<RecipeIngredient>();
     public DbSet<Ingredient> Ingredients => Set<Ingredient>();
@@ -28,25 +28,34 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             b.Property(m => m.Name).IsRequired().HasMaxLength(120);
             b.Property(m => m.WeekStart).HasConversion(dateOnlyConverter);
             b.Property(m => m.Content).HasMaxLength(8000);
-            b.Property(m => m.NutritionalInfo).HasMaxLength(4000);
         });
 
-        modelBuilder.Entity<MenuRecipe>(b =>
+        modelBuilder.Entity<MenuDay>(b =>
         {
-            b.HasOne(mr => mr.Menu)
-                .WithMany(m => m.MenuRecipes)
-                .HasForeignKey(mr => mr.MenuId)
+            b.Property(d => d.Dish).HasMaxLength(200);
+            b.Property(d => d.Protein).HasColumnType("decimal(18,2)");
+            b.Property(d => d.Carbohydrates).HasColumnType("decimal(18,2)");
+            b.Property(d => d.Fat).HasColumnType("decimal(18,2)");
+            b.Property(d => d.Sugars).HasColumnType("decimal(18,2)");
+            b.HasOne(d => d.Menu)
+                .WithMany(m => m.Days)
+                .HasForeignKey(d => d.MenuId)
                 .OnDelete(DeleteBehavior.Cascade);
-            b.HasOne(mr => mr.Recipe)
+            // Optional source recipe; if the recipe is deleted, keep the (copied) day values.
+            b.HasOne(d => d.Recipe)
                 .WithMany()
-                .HasForeignKey(mr => mr.RecipeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey(d => d.RecipeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Recipe>(b =>
         {
             b.Property(r => r.Name).IsRequired().HasMaxLength(120);
             b.Property(r => r.Instructions).HasMaxLength(8000);
+            b.Property(r => r.Protein).HasColumnType("decimal(18,2)");
+            b.Property(r => r.Carbohydrates).HasColumnType("decimal(18,2)");
+            b.Property(r => r.Fat).HasColumnType("decimal(18,2)");
+            b.Property(r => r.Sugars).HasColumnType("decimal(18,2)");
         });
 
         modelBuilder.Entity<RecipeIngredient>(b =>

@@ -260,6 +260,35 @@ code { color: var(--ra-green-700); }
     border-radius: 0.75rem;
 }
 
+/* Menu day tabs. */
+.nav-tabs { border-bottom-color: var(--ra-border); }
+.nav-tabs .nav-link {
+    color: var(--ra-muted);
+    border: 1px solid transparent;
+    border-top-left-radius: var(--ra-radius);
+    border-top-right-radius: var(--ra-radius);
+}
+.nav-tabs .nav-link:hover {
+    color: var(--ra-green-900);
+    border-color: var(--ra-border) var(--ra-border) transparent;
+    background-color: var(--ra-surface-alt);
+}
+.nav-tabs .nav-link.active {
+    color: var(--ra-green-900);
+    font-weight: 600;
+    background-color: var(--ra-surface);
+    border-color: var(--ra-border) var(--ra-border) var(--ra-surface);
+}
+.day-dot {
+    display: inline-block;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+    border-radius: 50%;
+    background-color: var(--ra-green-500);
+}
+
 /* ---------- Blazor framework UI ---------------------------- */
 .valid.modified:not([type=checkbox]) { outline: 1px solid var(--ra-green-500); }
 .invalid { outline: 1px solid var(--ra-terracotta); }

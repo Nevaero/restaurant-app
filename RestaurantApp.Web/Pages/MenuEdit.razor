@@ -21,7 +21,7 @@ else
         <a class="btn btn-outline-danger" href="@Api.MenuPdfUrl(Id, Loc.Culture)" target="_blank">@Loc["menuEdit.downloadPdf"]</a>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3 mb-3">
         <div class="col-md-8">
             <label class="form-label">@Loc["common.name"]</label>
             <input class="form-control" @bind="name" />
@@ -32,49 +32,91 @@ else
         </div>
     </div>
 
-    <h2 class="h5 mt-4">@Loc["menuEdit.recipes"]</h2>
-    <p class="text-muted small">@Loc["menuEdit.recipesHint"]</p>
-    @if (assignments.Count == 0)
-    {
-        <p class="text-muted">@Loc["menuEdit.noRecipes"]</p>
-    }
-    else
-    {
-        <table class="table table-sm w-auto">
-            <thead><tr><th>@Loc["menuEdit.day"]</th><th>@Loc["menuEdit.recipe"]</th><th></th></tr></thead>
-            <tbody>
-                @foreach (var line in assignments.OrderBy(a => a.Day))
-                {
-                    <tr>
-                        <td>
-                            <select class="form-select form-select-sm" @bind="line.Day">
-                                @for (var d = 0; d < 7; d++)
-                                {
-                                    var day = d;
-                                    <option value="@day">@Loc.Day(day)</option>
-                                }
-                            </select>
-                        </td>
-                        <td>
-                            <select class="form-select form-select-sm" @bind="line.RecipeId">
-                                <option value="0" disabled>@Loc["common.select"]</option>
-                                @foreach (var r in recipeCatalog)
-                                {
-                                    <option value="@r.Id">@r.Name</option>
-                                }
-                            </select>
-                        </td>
-                        <td><button class="btn btn-sm btn-outline-danger" @onclick="() => assignments.Remove(line)">✕</button></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-    <button class="btn btn-sm btn-outline-secondary" @onclick="() => assignments.Add(new())">@Loc["menuEdit.addRecipe"]</button>
+    <p class="text-muted small">@Loc["menuEdit.dayHint"]</p>
 
+    @* One tab per day *@
+    <ul class="nav nav-tabs">
+        @for (var d = 0; d < 7; d++)
+        {
+            var day = d;
+            <li class="nav-item">
+                <button class="nav-link @(activeDay == day ? "active" : "")" @onclick="() => SelectDay(day)">
+                    @Loc.Day(day)
+                    @if (days[day].HasContent)
+                    {
+                        <span class="day-dot" aria-hidden="true"></span>
+                    }
+                </button>
+            </li>
+        }
+    </ul>
+
+    var cur = days[activeDay];
+    <div class="border border-top-0 rounded-bottom p-3 mb-3 bg-white">
+        <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-6">
+                <label class="form-label">@Loc["menuEdit.importRecipe"]</label>
+                <select class="form-select" @bind="importId">
+                    <option value="0">@Loc["common.select"]</option>
+                    @foreach (var r in recipeCatalog)
+                    {
+                        <option value="@r.Id">@r.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary" @onclick="ImportRecipe" disabled="@(importId == 0)">@Loc["menuEdit.import"]</button>
+            </div>
+            <div class="col-auto ms-auto">
+                <button class="btn btn-outline-secondary" @onclick="ClearDay" disabled="@(!cur.HasContent)">@Loc["menuEdit.clearDay"]</button>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">@Loc["menuEdit.dish"]</label>
+            <input class="form-control" @bind="cur.Dish" />
+        </div>
+
+        <h6>@Loc["nutrition.title"] <small class="text-muted">(@Loc["nutrition.perServing"])</small></h6>
+        <div class="row g-2">
+            <div class="col">
+                <label class="form-label small">@Loc["nutrition.calories"]</label>
+                <input type="number" min="0" class="form-control" @bind="cur.Calories" />
+            </div>
+            <div class="col">
+                <label class="form-label small">@Loc["nutrition.protein"] (g)</label>
+                <input type="number" step="0.1" class="form-control" @bind="cur.Protein" />
+            </div>
+            <div class="col">
+                <label class="form-label small">@Loc["nutrition.carbohydrates"] (g)</label>
+                <input type="number" step="0.1" class="form-control" @bind="cur.Carbohydrates" />
+            </div>
+            <div class="col">
+                <label class="form-label small">@Loc["nutrition.fat"] (g)</label>
+                <input type="number" step="0.1" class="form-control" @bind="cur.Fat" />
+            </div>
+            <div class="col">
+                <label class="form-label small">@Loc["nutrition.sugars"] (g)</label>
+                <input type="number" step="0.1" class="form-control" @bind="cur.Sugars" />
+            </div>
+        </div>
+
+        @if (cur.Allergens.Count > 0)
+        {
+            <div class="mt-3">
+                <span class="small text-muted">@Loc["menuEdit.dayAllergens"]</span>
+                @foreach (var a in cur.Allergens)
+                {
+                    <span class="badge bg-info text-dark ms-1">@a</span>
+                }
+            </div>
+        }
+    </div>
+
+    var menuAllergens = MenuAllergens();
     @if (menuAllergens.Count > 0)
     {
-        <div class="mt-3">
+        <div class="mb-3">
             <strong>@Loc["menuEdit.allergensAcross"]</strong>
             @foreach (var a in menuAllergens)
             {
@@ -83,27 +125,21 @@ else
         </div>
     }
 
-    <div class="row g-3 mt-1">
-        <div class="col-12">
-            <label class="form-label">@Loc["menuEdit.notes"]</label>
-            <textarea class="form-control" rows="3" @bind="content"></textarea>
-        </div>
-        <div class="col-12">
-            <label class="form-label">@Loc["menuEdit.nutrition"]</label>
-            <textarea class="form-control" rows="3" @bind="nutrition"></textarea>
-        </div>
+    <div class="mb-3">
+        <label class="form-label">@Loc["menuEdit.notes"]</label>
+        <textarea class="form-control" rows="2" @bind="content"></textarea>
     </div>
 
     @if (saved)
     {
-        <div class="alert alert-success mt-3 py-2">@Loc["menuEdit.saved"]</div>
+        <div class="alert alert-success py-2">@Loc["menuEdit.saved"]</div>
     }
     @if (saveError is not null)
     {
-        <div class="alert alert-danger mt-3 py-2">@saveError</div>
+        <div class="alert alert-danger py-2">@saveError</div>
     }
 
-    <div class="d-flex gap-2 mt-3">
+    <div class="d-flex gap-2">
         <button class="btn btn-primary" @onclick="SaveAsync">@Loc["common.save"]</button>
         <a class="btn btn-secondary" href="menus">@Loc["common.done"]</a>
     </div>
@@ -119,16 +155,26 @@ else
 
     private string name = string.Empty;
     private string content = string.Empty;
-    private string nutrition = string.Empty;
     private DateTime weekDate = DateTime.Today;
-    private readonly List<Assignment> assignments = [];
-    private List<RecipeSummaryDto> recipeCatalog = [];
-    private IReadOnlyList<string> menuAllergens = [];
 
-    private sealed class Assignment
+    private int activeDay;
+    private int importId;
+    private readonly DayForm[] days = Enumerable.Range(0, 7).Select(d => new DayForm { Day = d }).ToArray();
+    private List<RecipeSummaryDto> recipeCatalog = [];
+
+    private sealed class DayForm
     {
-        public int RecipeId { get; set; }
         public int Day { get; set; }
+        public string Dish { get; set; } = string.Empty;
+        public int? RecipeId { get; set; }
+        public int Calories { get; set; }
+        public decimal Protein { get; set; }
+        public decimal Carbohydrates { get; set; }
+        public decimal Fat { get; set; }
+        public decimal Sugars { get; set; }
+        public IReadOnlyList<string> Allergens { get; set; } = [];
+
+        public bool HasContent => !string.IsNullOrWhiteSpace(Dish) || RecipeId is > 0;
     }
 
     protected override async Task OnInitializedAsync()
@@ -144,11 +190,19 @@ else
             }
             name = menu.Name;
             content = menu.Content;
-            nutrition = menu.NutritionalInfo;
             weekDate = menu.WeekStart.ToDateTime(TimeOnly.MinValue);
-            menuAllergens = menu.Allergens;
-            foreach (var mr in menu.Recipes)
-                assignments.Add(new Assignment { RecipeId = mr.RecipeId, Day = mr.Day });
+            foreach (var d in menu.Days.Where(d => d.Day is >= 0 and < 7))
+            {
+                var f = days[d.Day];
+                f.Dish = d.Dish;
+                f.RecipeId = d.RecipeId;
+                f.Calories = d.Nutrition.Calories;
+                f.Protein = d.Nutrition.Protein;
+                f.Carbohydrates = d.Nutrition.Carbohydrates;
+                f.Fat = d.Nutrition.Fat;
+                f.Sugars = d.Nutrition.Sugars;
+                f.Allergens = d.Allergens;
+            }
         }
         catch (Exception ex)
         {
@@ -159,6 +213,45 @@ else
             loading = false;
         }
     }
+
+    private void SelectDay(int day)
+    {
+        activeDay = day;
+        importId = 0;
+    }
+
+    private void ImportRecipe()
+    {
+        var r = recipeCatalog.FirstOrDefault(x => x.Id == importId);
+        if (r is null) return;
+
+        var d = days[activeDay];
+        d.Dish = r.Name;
+        d.RecipeId = r.Id;
+        d.Calories = r.Nutrition.Calories;
+        d.Protein = r.Nutrition.Protein;
+        d.Carbohydrates = r.Nutrition.Carbohydrates;
+        d.Fat = r.Nutrition.Fat;
+        d.Sugars = r.Nutrition.Sugars;
+        d.Allergens = r.Allergens;
+        importId = 0;
+    }
+
+    private void ClearDay()
+    {
+        var d = days[activeDay];
+        d.Dish = string.Empty;
+        d.RecipeId = null;
+        d.Calories = 0; d.Protein = 0; d.Carbohydrates = 0; d.Fat = 0; d.Sugars = 0;
+        d.Allergens = [];
+    }
+
+    private IReadOnlyList<string> MenuAllergens() =>
+        days.Where(d => d.HasContent)
+            .SelectMany(d => d.Allergens)
+            .Distinct()
+            .OrderBy(a => a)
+            .ToList();
 
     private async Task SaveAsync()
     {
@@ -171,22 +264,22 @@ else
             return;
         }
 
-        var recipes = assignments
-            .Where(a => a.RecipeId > 0)
-            .Select(a => new MenuRecipeInput(a.RecipeId, a.Day))
+        var dayInputs = days
+            .Where(d => d.HasContent)
+            .Select(d => new MenuDayInput(
+                d.Day, d.Dish, d.RecipeId,
+                new NutritionDto(d.Calories, d.Protein, d.Carbohydrates, d.Fat, d.Sugars)))
             .ToList();
 
         try
         {
             var updated = await Api.UpdateMenuAsync(Id, new UpdateMenuRequest(
-                name, DateOnly.FromDateTime(weekDate), content, nutrition, recipes));
+                name, DateOnly.FromDateTime(weekDate), content, dayInputs));
             if (updated is not null)
             {
                 name = updated.Name;
                 content = updated.Content;
-                nutrition = updated.NutritionalInfo;
                 weekDate = updated.WeekStart.ToDateTime(TimeOnly.MinValue);
-                menuAllergens = updated.Allergens;
             }
             saved = true;
         }

@@ -6,9 +6,11 @@ using RestaurantApp.Core.Services;
 
 namespace RestaurantApp.Api.Services;
 
-/// <summary>Renders a weekly menu as an A4-landscape PDF (a Monday–Sunday grid of recipes).</summary>
+/// <summary>Renders a weekly menu as an A4-landscape PDF (a Monday–Sunday grid of dishes + nutrition).</summary>
 public class MenuPdfService
 {
+    private const string HeaderGreen = "#24513F";
+
     private static readonly string[] DayNamesEn =
         ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     private static readonly string[] DayNamesFr =
@@ -22,10 +24,14 @@ public class MenuPdfService
         var allergensLabel = fr ? "Allergènes" : "Allergens";
         var containsLabel = fr ? "Contient les allergènes" : "Contains allergens";
         var generatedLabel = fr ? "Généré le" : "Generated";
+        var proteinL = fr ? "Protéines" : "Protein";
+        var carbsL = fr ? "Glucides" : "Carbs";
+        var fatL = fr ? "Lipides" : "Fat";
+        var sugarsL = fr ? "Sucres" : "Sugars";
 
-        var recipesByDay = menu.MenuRecipes
-            .GroupBy(mr => mr.Day)
-            .ToDictionary(g => g.Key, g => g.Select(mr => mr.Recipe).ToList());
+        var daysByIndex = menu.Days
+            .GroupBy(d => d.Day)
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         var menuAllergens = AllergenSummary.ForMenu(menu);
 
@@ -39,7 +45,7 @@ public class MenuPdfService
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Text(menu.Name).FontSize(22).Bold();
+                    col.Item().Text(menu.Name).FontSize(22).Bold().FontColor(HeaderGreen);
                     col.Item().Text(
                         $"{weekOfLabel} {menu.WeekStart:dd MMM yyyy} – {menu.WeekStart.AddDays(6):dd MMM yyyy}")
                         .FontSize(12).FontColor(Colors.Grey.Darken1);
@@ -68,21 +74,27 @@ public class MenuPdfService
 
                     for (var day = 0; day < 7; day++)
                     {
-                        var recipes = recipesByDay.GetValueOrDefault(day) ?? [];
+                        var entries = daysByIndex.GetValueOrDefault(day) ?? [];
                         table.Cell().Element(BodyCell).Column(c =>
                         {
-                            if (recipes.Count == 0)
+                            if (entries.Count == 0)
                             {
                                 c.Item().Text("—").FontColor(Colors.Grey.Medium);
                                 return;
                             }
 
-                            foreach (var recipe in recipes)
+                            foreach (var entry in entries)
                             {
-                                c.Item().PaddingBottom(6).Column(rc =>
+                                c.Item().PaddingBottom(8).Column(rc =>
                                 {
-                                    rc.Item().Text(recipe.Name).SemiBold();
-                                    var allergens = AllergenSummary.ForRecipe(recipe);
+                                    rc.Item().Text(string.IsNullOrWhiteSpace(entry.Dish) ? "—" : entry.Dish).SemiBold();
+                                    rc.Item().Text($"{entry.Calories} kcal").FontSize(8).FontColor(HeaderGreen);
+                                    rc.Item().Text(
+                                        $"{proteinL} {G(entry.Protein)} · {carbsL} {G(entry.Carbohydrates)} · " +
+                                        $"{fatL} {G(entry.Fat)} · {sugarsL} {G(entry.Sugars)}")
+                                        .FontSize(7.5f).FontColor(Colors.Grey.Darken1);
+
+                                    var allergens = entry.Recipe is null ? [] : AllergenSummary.ForRecipe(entry.Recipe);
                                     if (allergens.Count > 0)
                                     {
                                         rc.Item().Text($"{allergensLabel}: {string.Join(", ", allergens)}")
@@ -98,8 +110,6 @@ public class MenuPdfService
                 {
                     if (menuAllergens.Count > 0)
                         col.Item().Text($"{containsLabel}: {string.Join(", ", menuAllergens)}").FontSize(9).Bold();
-                    if (!string.IsNullOrWhiteSpace(menu.NutritionalInfo))
-                        col.Item().Text(menu.NutritionalInfo).FontSize(8).FontColor(Colors.Grey.Darken1);
                     if (!string.IsNullOrWhiteSpace(menu.Content))
                         col.Item().Text(menu.Content).FontSize(8).FontColor(Colors.Grey.Darken1);
                     col.Item().PaddingTop(4).Text($"{generatedLabel} {DateTime.Now:dd MMM yyyy HH:mm}")
@@ -109,8 +119,10 @@ public class MenuPdfService
         }).GeneratePdf();
     }
 
+    private static string G(decimal grams) => $"{grams.ToString("0.#")} g";
+
     private static IContainer HeaderCell(IContainer container) =>
-        container.Background(Colors.Blue.Darken2).Padding(6);
+        container.Background(HeaderGreen).Padding(6);
 
     private static IContainer BodyCell(IContainer container) =>
         container.Border(0.5f).BorderColor(Colors.Grey.Lighten1).Padding(6).MinHeight(120);

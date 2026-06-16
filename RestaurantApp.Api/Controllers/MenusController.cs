@@ -24,7 +24,7 @@ public class MenusController(
     [HttpGet("{id:int}")]
     public async Task<IResult> GetById(int id, CancellationToken ct)
     {
-        var menu = await menus.GetWithRecipesAsync(id, ct);
+        var menu = await menus.GetWithDaysAsync(id, ct);
         return menu is null ? Results.NotFound() : Results.Ok(menu.ToDto());
     }
 
@@ -44,29 +44,41 @@ public class MenusController(
         menus.Add(menu);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var created = await menus.GetWithRecipesAsync(menu.Id, ct);
+        var created = await menus.GetWithDaysAsync(menu.Id, ct);
         return Results.Created($"/api/menus/{menu.Id}", created!.ToDto());
     }
 
     [HttpPut("{id:int}")]
     public async Task<IResult> Update(int id, UpdateMenuRequest request, CancellationToken ct)
     {
-        var menu = await menus.GetWithRecipesAsync(id, ct);
+        var menu = await menus.GetWithDaysAsync(id, ct);
         if (menu is null)
             return Results.NotFound();
 
         menu.Name = request.Name;
         menu.WeekStart = WeekRules.MondayOf(request.WeekStart);
         menu.Content = request.Content;
-        menu.NutritionalInfo = request.NutritionalInfo;
 
-        // Replace the recipe assignments wholesale.
-        menu.MenuRecipes.Clear();
-        foreach (var item in request.Recipes.Where(r => r.RecipeId > 0))
-            menu.MenuRecipes.Add(new MenuRecipe { RecipeId = item.RecipeId, Day = Math.Clamp(item.Day, 0, 6) });
+        // Replace the day entries wholesale. Keep days that have a dish or an imported recipe.
+        menu.Days.Clear();
+        foreach (var item in request.Days.Where(d => !string.IsNullOrWhiteSpace(d.Dish) || d.RecipeId is > 0))
+        {
+            var n = item.Nutrition ?? NutritionDto.Empty;
+            menu.Days.Add(new MenuDay
+            {
+                Day = Math.Clamp(item.Day, 0, 6),
+                Dish = item.Dish ?? string.Empty,
+                RecipeId = item.RecipeId is > 0 ? item.RecipeId : null,
+                Calories = n.Calories,
+                Protein = n.Protein,
+                Carbohydrates = n.Carbohydrates,
+                Fat = n.Fat,
+                Sugars = n.Sugars,
+            });
+        }
 
         await unitOfWork.SaveChangesAsync(ct);
-        var updated = await menus.GetWithRecipesAsync(id, ct);
+        var updated = await menus.GetWithDaysAsync(id, ct);
         return Results.Ok(updated!.ToDto());
     }
 
@@ -86,7 +98,7 @@ public class MenusController(
     [HttpGet("{id:int}/pdf")]
     public async Task<IResult> GetPdf(int id, [FromQuery] string? lang, CancellationToken ct)
     {
-        var menu = await menus.GetWithRecipesAsync(id, ct);
+        var menu = await menus.GetWithDaysAsync(id, ct);
         if (menu is null)
             return Results.NotFound();
 

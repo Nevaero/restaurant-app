@@ -59,6 +59,7 @@ public static class DbInitializer
         var bolognese = new Recipe
         {
             Name = "Pâtes à la bolognaise", Servings = 4,
+            Calories = 650, Protein = 32m, Carbohydrates = 75m, Fat = 22m, Sugars = 8m,
             Instructions = "Faire revenir le bœuf, ajouter les tomates, laisser mijoter 30 min, servir sur les pâtes avec du parmesan.",
             Ingredients =
             [
@@ -71,6 +72,7 @@ public static class DbInitializer
         var pestoPasta = new Recipe
         {
             Name = "Pâtes au pesto", Servings = 4,
+            Calories = 600, Protein = 18m, Carbohydrates = 80m, Fat = 24m, Sugars = 6m,
             Instructions = "Cuire les pâtes, mélanger au pesto, parsemer de parmesan.",
             Ingredients =
             [
@@ -82,6 +84,7 @@ public static class DbInitializer
         var grilledSalmon = new Recipe
         {
             Name = "Saumon grillé", Servings = 2,
+            Calories = 450, Protein = 38m, Carbohydrates = 5m, Fat = 28m, Sugars = 2m,
             Instructions = "Assaisonner le saumon, griller 4 min de chaque côté, servir avec une laitue assaisonnée.",
             Ingredients =
             [
@@ -93,6 +96,7 @@ public static class DbInitializer
         var shrimpRisotto = new Recipe
         {
             Name = "Risotto aux crevettes", Servings = 4,
+            Calories = 520, Protein = 24m, Carbohydrates = 68m, Fat = 14m, Sugars = 3m,
             Instructions = "Nacrer le riz, ajouter le bouillon progressivement, incorporer les crevettes, le beurre et le parmesan.",
             Ingredients =
             [
@@ -105,6 +109,7 @@ public static class DbInitializer
         var caprese = new Recipe
         {
             Name = "Salade caprese", Servings = 2,
+            Calories = 320, Protein = 14m, Carbohydrates = 12m, Fat = 22m, Sugars = 6m,
             Instructions = "Trancher les tomates, alterner avec des copeaux de parmesan et du basilic, arroser d'huile d'olive.",
             Ingredients =
             [
@@ -116,6 +121,7 @@ public static class DbInitializer
         var omelette = new Recipe
         {
             Name = "Omelette au fromage", Servings = 1,
+            Calories = 380, Protein = 24m, Carbohydrates = 3m, Fat = 30m, Sugars = 1m,
             Instructions = "Battre les œufs, cuire au beurre, replier avec le parmesan.",
             Ingredients =
             [
@@ -129,39 +135,48 @@ public static class DbInitializer
         var today = DateOnly.FromDateTime(DateTime.Today);
         var thisMonday = WeekRules.MondayOf(today);
 
-        // ── Menus (recipes placed across the week so the grid/PDF is full) ───────
+        // ── Menus (one entry per day; values copied from the source recipe) ──────
+        static MenuDay FromRecipe(int day, Recipe r) => new()
+        {
+            Day = day,
+            Dish = r.Name,
+            Recipe = r,
+            Calories = r.Calories,
+            Protein = r.Protein,
+            Carbohydrates = r.Carbohydrates,
+            Fat = r.Fat,
+            Sugars = r.Sugars,
+        };
+
         db.Menus.Add(new Menu
         {
             Name = "Menu de printemps", WeekStart = thisMonday,
             Content = "Plats du jour, servis de 11h30 à 14h00.",
-            NutritionalInfo = "Moy. 750 kcal/portion · 35 g protéines · 28 g lipides · 80 g glucides",
-            MenuRecipes =
+            Days =
             [
-                new MenuRecipe { Recipe = bolognese,     Day = 0 },
-                new MenuRecipe { Recipe = grilledSalmon, Day = 1 },
-                new MenuRecipe { Recipe = pestoPasta,    Day = 2 },
-                new MenuRecipe { Recipe = shrimpRisotto, Day = 3 },
-                new MenuRecipe { Recipe = caprese,       Day = 4 },
+                FromRecipe(0, bolognese),
+                FromRecipe(1, grilledSalmon),
+                FromRecipe(2, pestoPasta),
+                FromRecipe(3, shrimpRisotto),
+                FromRecipe(4, caprese),
             ],
         });
         db.Menus.Add(new Menu
         {
             Name = "Semaine précédente", WeekStart = thisMonday.AddDays(-7),
             Content = "Plats de saison en rotation.",
-            NutritionalInfo = "Moy. 720 kcal/portion",
-            MenuRecipes =
+            Days =
             [
-                new MenuRecipe { Recipe = omelette,   Day = 0 },
-                new MenuRecipe { Recipe = caprese,    Day = 2 },
-                new MenuRecipe { Recipe = bolognese,  Day = 4 },
+                FromRecipe(0, omelette),
+                FromRecipe(2, caprese),
+                FromRecipe(4, bolognese),
             ],
         });
         db.Menus.Add(new Menu
         {
             Name = "Semaine prochaine (brouillon)", WeekStart = thisMonday.AddDays(7),
             Content = "Brouillon — à confirmer.",
-            NutritionalInfo = "",
-            MenuRecipes = [new MenuRecipe { Recipe = pestoPasta, Day = 0 }],
+            Days = [FromRecipe(0, pestoPasta)],
         });
 
         // ── Staff (roles kept as English values; the UI localizes them) ──────────

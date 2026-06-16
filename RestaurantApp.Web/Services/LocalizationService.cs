@@ -45,9 +45,9 @@ public class LocalizationService
     private static readonly Dictionary<string, (string Fr, string En)> Translations = new()
     {
         // App shell / navigation
-        ["app.title"] = ("RestaurantApp", "RestaurantApp"),
-        ["app.tagline"] = ("Un ERP de restaurant léger — menus hebdomadaires, recettes, planning et inventaire.",
-                           "A lightweight restaurant ERP — weekly menus, recipes, staff planning and inventory."),
+        ["app.title"] = ("EasyKitchen", "EasyKitchen"),
+        ["app.tagline"] = ("Un ERP léger pour cuisines professionnelles — menus hebdomadaires, recettes, planning et inventaire.",
+                           "A lightweight ERP for professional kitchens — weekly menus, recipes, staff planning and inventory."),
         ["nav.home"] = ("Accueil", "Home"),
         ["nav.menu"] = ("Menu", "Menu"),
         ["nav.recipes"] = ("Recettes", "Recipes"),
@@ -93,18 +93,26 @@ public class LocalizationService
         ["menuEdit.title"] = ("Modifier le menu", "Edit menu"),
         ["menuEdit.notFound"] = ("Menu introuvable.", "Menu not found."),
         ["menuEdit.downloadPdf"] = ("⤓ Télécharger le PDF (A4)", "⤓ Download PDF (A4)"),
-        ["menuEdit.recipes"] = ("Recettes", "Recipes"),
-        ["menuEdit.recipesHint"] = ("Affectez des recettes aux jours de la semaine. Le PDF les présente en grille du lundi au dimanche.",
-                                    "Assign recipes to days of the week. The PDF renders them as a Monday–Sunday grid."),
-        ["menuEdit.noRecipes"] = ("Aucune recette affectée pour l'instant.", "No recipes assigned yet."),
-        ["menuEdit.day"] = ("Jour", "Day"),
-        ["menuEdit.recipe"] = ("Recette", "Recipe"),
-        ["menuEdit.addRecipe"] = ("+ Ajouter une recette à un jour", "+ Add recipe to a day"),
+        ["menuEdit.dayHint"] = ("Un onglet par jour. Importez une recette pour copier ses valeurs dans le formulaire du jour, puis ajustez si besoin.",
+                                "One tab per day. Import a recipe to copy its values into the day's form, then adjust if needed."),
+        ["menuEdit.dish"] = ("Plat", "Dish"),
+        ["menuEdit.importRecipe"] = ("Importer une recette", "Import a recipe"),
+        ["menuEdit.import"] = ("Importer", "Import"),
+        ["menuEdit.clearDay"] = ("Vider ce jour", "Clear this day"),
         ["menuEdit.allergensAcross"] = ("Allergènes de ce menu :", "Allergens across this menu:"),
+        ["menuEdit.dayAllergens"] = ("Allergènes du jour :", "Day allergens:"),
         ["menuEdit.notes"] = ("Notes", "Notes"),
-        ["menuEdit.nutrition"] = ("Valeurs nutritionnelles", "Nutritional values"),
         ["menuEdit.saved"] = ("Enregistré.", "Saved."),
         ["common.select"] = ("Choisir…", "Select…"),
+
+        // Nutrition
+        ["nutrition.title"] = ("Valeurs nutritionnelles", "Nutritional values"),
+        ["nutrition.perServing"] = ("par portion", "per serving"),
+        ["nutrition.calories"] = ("Calories", "Calories"),
+        ["nutrition.protein"] = ("Protéines", "Protein"),
+        ["nutrition.carbohydrates"] = ("Glucides", "Carbohydrates"),
+        ["nutrition.fat"] = ("Lipides", "Fat"),
+        ["nutrition.sugars"] = ("Sucres", "Sugars"),
 
         // Recipes
         ["recipes.title"] = ("Recettes", "Recipes"),

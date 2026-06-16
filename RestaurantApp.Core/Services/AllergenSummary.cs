@@ -14,9 +14,9 @@ public static class AllergenSummary
             .ToList();
 
     public static IReadOnlyList<string> ForMenu(Menu menu) =>
-        menu.MenuRecipes
-            .Where(mr => mr.Recipe is not null)
-            .SelectMany(mr => ForRecipe(mr.Recipe))
+        menu.Days
+            .Where(d => d.Recipe is not null)
+            .SelectMany(d => ForRecipe(d.Recipe!))
             .Distinct()
             .OrderBy(name => name)
             .ToList();

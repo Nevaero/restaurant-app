@@ -4,23 +4,33 @@ namespace RestaurantApp.Core.Entities;
 public class Menu
 {
     public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;          // e.g. "Week 24 – Spring menu"
-    public DateOnly WeekStart { get; set; }                    // always a Monday
-    public string Content { get; set; } = string.Empty;        // free-text notes
-    public string NutritionalInfo { get; set; } = string.Empty; // calories, macros, notes
+    public string Name { get; set; } = string.Empty;     // e.g. "Menu de printemps"
+    public DateOnly WeekStart { get; set; }              // always a Monday
+    public string Content { get; set; } = string.Empty;  // free-text notes
 
-    public ICollection<MenuRecipe> MenuRecipes { get; set; } = [];
+    public ICollection<MenuDay> Days { get; set; } = [];
 }
 
-/// <summary>Join entity: a recipe placed on a given day of a menu's week.</summary>
-public class MenuRecipe
+/// <summary>One day of a menu: the dish and its nutritional values, optionally imported from a recipe.</summary>
+public class MenuDay
 {
     public int Id { get; set; }
     public int MenuId { get; set; }
     public Menu Menu { get; set; } = null!;
-    public int RecipeId { get; set; }
-    public Recipe Recipe { get; set; } = null!;
 
     /// <summary>Day offset from the menu's Monday: 0 = Monday … 6 = Sunday.</summary>
     public int Day { get; set; }
+
+    public string Dish { get; set; } = string.Empty;
+
+    /// <summary>Recipe the values were imported from (kept so allergens can roll up). Null if hand-entered.</summary>
+    public int? RecipeId { get; set; }
+    public Recipe? Recipe { get; set; }
+
+    // Nutritional values for the day's serving.
+    public int Calories { get; set; }
+    public decimal Protein { get; set; }
+    public decimal Carbohydrates { get; set; }
+    public decimal Fat { get; set; }
+    public decimal Sugars { get; set; }
 }

@@ -43,10 +43,10 @@ public class AllergenSummaryTests
         var menu = new Menu
         {
             Name = "Week",
-            MenuRecipes =
+            Days =
             [
-                new MenuRecipe { Recipe = RecipeWith(Ingredient("Pasta", "Gluten")) },
-                new MenuRecipe { Recipe = RecipeWith(Ingredient("Shrimp", "Crustaceans"), Ingredient("Pasta", "Gluten")) },
+                new MenuDay { Recipe = RecipeWith(Ingredient("Pasta", "Gluten")) },
+                new MenuDay { Recipe = RecipeWith(Ingredient("Shrimp", "Crustaceans"), Ingredient("Pasta", "Gluten")) },
             ],
         };
 

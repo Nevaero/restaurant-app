@@ -36,6 +36,7 @@ public class RecipesController(IRecipeRepository recipes, IUnitOfWork unitOfWork
             Servings = request.Servings < 1 ? 1 : request.Servings,
             Ingredients = BuildIngredients(request.Ingredients),
         };
+        ApplyNutrition(recipe, request.Nutrition);
 
         recipes.Add(recipe);
         await unitOfWork.SaveChangesAsync(ct);
@@ -54,6 +55,7 @@ public class RecipesController(IRecipeRepository recipes, IUnitOfWork unitOfWork
         recipe.Name = request.Name;
         recipe.Instructions = request.Instructions;
         recipe.Servings = request.Servings < 1 ? 1 : request.Servings;
+        ApplyNutrition(recipe, request.Nutrition);
 
         // Replace the ingredient set wholesale.
         recipe.Ingredients.Clear();
@@ -75,6 +77,16 @@ public class RecipesController(IRecipeRepository recipes, IUnitOfWork unitOfWork
         recipes.Remove(recipe);
         await unitOfWork.SaveChangesAsync(ct);
         return Results.NoContent();
+    }
+
+    private static void ApplyNutrition(Recipe recipe, NutritionDto? n)
+    {
+        n ??= NutritionDto.Empty;
+        recipe.Calories = n.Calories;
+        recipe.Protein = n.Protein;
+        recipe.Carbohydrates = n.Carbohydrates;
+        recipe.Fat = n.Fat;
+        recipe.Sugars = n.Sugars;
     }
 
     private static List<RecipeIngredient> BuildIngredients(IReadOnlyList<RecipeIngredientInput> inputs) =>
