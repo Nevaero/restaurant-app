@@ -175,7 +175,7 @@ public static class DbInitializer
         db.Menus.Add(new Menu
         {
             Name = "Semaine prochaine (brouillon)", WeekStart = thisMonday.AddDays(7),
-            Content = "Brouillon — à confirmer.",
+            Content = "Brouillon à confirmer.",
             Days = [FromRecipe(0, pestoPasta)],
         });
 
@@ -201,10 +201,10 @@ public static class DbInitializer
                 });
         }
 
-        AddShifts(alice, 0, 5, 8, 16, "Ouverture");  // Mon–Sat, 48h → overtime
-        AddShifts(bruno, 0, 4, 14, 22);               // Mon–Fri, 40h
-        AddShifts(david, 1, 5, 10, 18);               // Tue–Sat, 40h
-        AddShifts(elena, 2, 6, 16, 22);               // Wed–Sun, 30h
+        AddShifts(alice, 0, 5, 8, 16, "Ouverture");  // Mon-Sat, 48h, overtime
+        AddShifts(bruno, 0, 4, 14, 22);               // Mon-Fri, 40h
+        AddShifts(david, 1, 5, 10, 18);               // Tue-Sat, 40h
+        AddShifts(elena, 2, 6, 16, 22);               // Wed-Sun, 30h
         db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday,           StartTime = new(9, 0), EndTime = new(17, 0), Notes = "Planification hebdomadaire" });
         db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday.AddDays(2), StartTime = new(9, 0), EndTime = new(17, 0) });
         db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday.AddDays(4), StartTime = new(9, 0), EndTime = new(17, 0) });

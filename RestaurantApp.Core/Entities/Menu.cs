@@ -1,6 +1,6 @@
 namespace RestaurantApp.Core.Entities;
 
-/// <summary>A weekly menu. Menus always run Monday–Sunday; <see cref="WeekStart"/> is the Monday.</summary>
+/// <summary>A weekly menu. Menus always run Monday to Sunday; <see cref="WeekStart"/> is the Monday.</summary>
 public class Menu
 {
     public int Id { get; set; }

@@ -46,8 +46,8 @@ public class LocalizationService
     {
         // App shell / navigation
         ["app.title"] = ("EasyKitchen", "EasyKitchen"),
-        ["app.tagline"] = ("Un ERP léger pour cuisines professionnelles — menus hebdomadaires, recettes, planning et inventaire.",
-                           "A lightweight ERP for professional kitchens — weekly menus, recipes, staff planning and inventory."),
+        ["app.tagline"] = ("Un ERP léger pour cuisines professionnelles : menus, recettes, planning et inventaire.",
+                           "A lightweight ERP for professional kitchens: menus, recipes, planning and inventory."),
         ["nav.home"] = ("Accueil", "Home"),
         ["nav.menu"] = ("Menu", "Menu"),
         ["nav.recipes"] = ("Recettes", "Recipes"),
@@ -116,7 +116,7 @@ public class LocalizationService
 
         // Recipes
         ["recipes.title"] = ("Recettes", "Recipes"),
-        ["recipes.search"] = ("Rechercher recettes ou ingrédients…", "Search recipes or ingredients…"),
+        ["recipes.search"] = ("Rechercher…", "Search…"),
         ["recipes.new"] = ("+ Nouvelle recette", "+ New recipe"),
         ["recipes.none"] = ("Aucune recette trouvée.", "No recipes found."),
         ["recipes.servings"] = ("Portions", "Servings"),

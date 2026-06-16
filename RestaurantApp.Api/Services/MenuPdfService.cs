@@ -6,7 +6,7 @@ using RestaurantApp.Core.Services;
 
 namespace RestaurantApp.Api.Services;
 
-/// <summary>Renders a weekly menu as an A4-landscape PDF (a Monday–Sunday grid of dishes + nutrition).</summary>
+/// <summary>Renders a weekly menu as an A4-landscape PDF (a Monday to Sunday grid of dishes + nutrition).</summary>
 public class MenuPdfService
 {
     private const string HeaderGreen = "#24513F";
@@ -47,7 +47,7 @@ public class MenuPdfService
                 {
                     col.Item().Text(menu.Name).FontSize(22).Bold().FontColor(HeaderGreen);
                     col.Item().Text(
-                        $"{weekOfLabel} {menu.WeekStart:dd MMM yyyy} – {menu.WeekStart.AddDays(6):dd MMM yyyy}")
+                        $"{weekOfLabel} {menu.WeekStart:dd MMM yyyy} to {menu.WeekStart.AddDays(6):dd MMM yyyy}")
                         .FontSize(12).FontColor(Colors.Grey.Darken1);
                 });
 
@@ -79,7 +79,7 @@ public class MenuPdfService
                         {
                             if (entries.Count == 0)
                             {
-                                c.Item().Text("—").FontColor(Colors.Grey.Medium);
+                                c.Item().Text("-").FontColor(Colors.Grey.Medium);
                                 return;
                             }
 
@@ -87,7 +87,7 @@ public class MenuPdfService
                             {
                                 c.Item().PaddingBottom(8).Column(rc =>
                                 {
-                                    rc.Item().Text(string.IsNullOrWhiteSpace(entry.Dish) ? "—" : entry.Dish).SemiBold();
+                                    rc.Item().Text(string.IsNullOrWhiteSpace(entry.Dish) ? "-" : entry.Dish).SemiBold();
                                     rc.Item().Text($"{entry.Calories} kcal").FontSize(8).FontColor(HeaderGreen);
                                     rc.Item().Text(
                                         $"{proteinL} {G(entry.Protein)} · {carbsL} {G(entry.Carbohydrates)} · " +

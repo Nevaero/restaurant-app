@@ -18,7 +18,7 @@ else
 {
     <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
         <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(-7)">@Loc["planning.previous"]</button>
-        <strong>@weekStart.ToString("dd MMM") – @weekStart.AddDays(6).ToString("dd MMM yyyy")</strong>
+        <strong>@weekStart.ToString("dd MMM") to @weekStart.AddDays(6).ToString("dd MMM yyyy")</strong>
         <button class="btn btn-outline-secondary" @onclick="() => ShiftWeek(7)">@Loc["planning.next"]</button>
         <button class="btn btn-link" @onclick="GoToThisWeek">@Loc["planning.thisWeek"]</button>
         <span class="ms-auto"></span>
@@ -51,7 +51,7 @@ else
                                 @foreach (var s in ShiftsFor(emp.EmployeeId, day))
                                 {
                                     <div class="shift-chip" title="@s.Notes">
-                                        @s.StartTime.ToString("HH:mm")–@s.EndTime.ToString("HH:mm")
+                                        @s.StartTime.ToString("HH:mm")-@s.EndTime.ToString("HH:mm")
                                         <button class="btn-close btn-close-sm" @onclick="() => DeleteShift(s)"></button>
                                     </div>
                                 }
@@ -97,7 +97,7 @@ else
     <div class="modal-backdrop-custom">
         <div class="card shadow modal-card">
             <div class="card-body">
-                <h5 class="card-title">@Loc["planning.addShift"] — @addEmployee.Name</h5>
+                <h5 class="card-title">@Loc["planning.addShift"]: @addEmployee.Name</h5>
                 <p class="text-muted">@addDate.ToString("dddd, dd MMM yyyy")</p>
                 <div class="row">
                     <div class="col mb-2">

@@ -6,21 +6,21 @@ WebAssembly** frontend.
 
 The homepage is a card grid leading to the modules:
 
-- **Menu** — weekly menus (Monday–Sunday). You pick the Monday with a date picker, give it a
+- **Menu**: weekly menus (Monday to Sunday). You pick the Monday with a date picker, give it a
   name, **load recipes onto days**, and **export the menu as an A4-landscape PDF** (a
-  Monday–Sunday grid with per-day recipes and aggregated allergens).
-- **Recipes** — a searchable recipe list with full CRUD. Recipes are built from inventory
+  Monday to Sunday grid with per-day recipes and aggregated allergens).
+- **Recipes**: a searchable recipe list with full CRUD. Recipes are built from inventory
   ingredients (with quantities); their allergens roll up automatically from those ingredients.
-- **Planning** — the weekly staff schedule for cooks, clerks, servers and managers, with
+- **Planning**: the weekly staff schedule for cooks, clerks, servers and managers, with
   per-employee hours, labour cost and overtime alerts (informed by how tools like
   7shifts/Deputy structure schedules).
-- **Inventaire** (inventory) — ingredients with quantities, units, low-stock alerts and
+- **Inventaire** (inventory): ingredients with quantities, units, low-stock alerts and
   **normalized allergens** (the EU's 14 major allergens, modelled as their own table and a
   many-to-many relationship).
 
 Menu PDFs are generated server-side with **QuestPDF**.
 
-The UI uses a calm, professional **green + beige** theme with a sans-serif type stack —
+The UI uses a calm, professional **green + beige** theme with a sans-serif type stack:
 a low-fatigue palette suited to an all-day kitchen ERP, with a dark-green sidebar, warm
 beige surfaces and earthy semantic colours (sage, clay, terracotta).
 
@@ -50,20 +50,20 @@ RestaurantApp.Web             Blazor WebAssembly UI (Menu, Recipes, Planning, In
 RestaurantApp.Tests           Unit tests for scheduling, allergen aggregation and week handling
 ```
 
-The architecture is a clean, layered **Repository + Unit of Work** design — deliberately
+The architecture is a clean, layered **Repository + Unit of Work** design, deliberately
 simpler than CQRS/mediator, to stay readable for a demo. `Core` has no infrastructure
 dependencies.
 
 ## Key business logic
 
-- **`SchedulingService`** (Core) — pure scheduling rules: shift duration, overlap detection,
+- **`SchedulingService`** (Core): pure scheduling rules such as shift duration, overlap detection,
   shift validation (no overlapping shifts for the same employee), and a weekly summary per
   employee (total hours, labour cost = hours × hourly rate, and an overtime flag above
   42 h/week). This is the primary unit-test target.
-- **`AllergenSummary`** (Core) — rolls allergens up the graph: from an ingredient's normalized
+- **`AllergenSummary`** (Core): rolls allergens up the graph, from an ingredient's normalized
   allergens to a recipe (distinct union of its ingredients), and from a recipe to a whole menu.
-- **`WeekRules`** (Core) — Monday-anchored week helpers. Menus and the planning grid both run
-  Monday–Sunday; any date the user picks for a menu is snapped to that week's Monday.
+- **`WeekRules`** (Core): Monday-anchored week helpers. Menus and the planning grid both run
+  Monday to Sunday; any date the user picks for a menu is snapped to that week's Monday.
 
 ## Running locally
 
@@ -93,10 +93,10 @@ The frontend reads the API base URL from `RestaurantApp.Web/wwwroot/appsettings.
 
 The app ships as two containers, wired together by `docker-compose.yml`:
 
-- **api** — the ASP.NET Core API (Ubuntu-based .NET 8 runtime). SQLite lives on a named
+- **api**: the ASP.NET Core API (Ubuntu-based .NET 8 runtime). SQLite lives on a named
   volume (`restaurant-data`) so data survives restarts; migrations run and demo data is
   seeded automatically on first start.
-- **web** — nginx serving the published Blazor WebAssembly app and reverse-proxying `/api`
+- **web**: nginx serving the published Blazor WebAssembly app and reverse-proxying `/api`
   to the api container. Because the browser talks to a single origin, there is no CORS to
   configure and no API hostname to hard-code.
 

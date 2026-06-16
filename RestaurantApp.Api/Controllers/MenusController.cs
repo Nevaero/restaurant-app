@@ -37,7 +37,7 @@ public class MenusController(
         var menu = new Menu
         {
             Name = request.Name,
-            // Menus always run Monday–Sunday; snap whatever date was picked to its Monday.
+            // Menus always run Monday to Sunday; snap whatever date was picked to its Monday.
             WeekStart = WeekRules.MondayOf(request.WeekStart),
         };
 
