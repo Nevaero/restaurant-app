@@ -1,0 +1,21 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Local dev database
+*.db
+*.db-shm
+*.db-wal
+
+# VCS / IDE / docs
+.git/
+.gitignore
+.vs/
+.vscode/
+*.user
+**/Properties/launchSettings.json
+
+# Local tooling
+.config/
+README.md

@@ -85,6 +85,34 @@ The frontend reads the API base URL from `RestaurantApp.Web/wwwroot/appsettings.
 > HTTPS profiles are also configured (API `https://localhost:5001`, Web `https://localhost:5002`).
 > To use them, run `dotnet dev-certs https --trust` first and point `ApiBaseUrl` at the HTTPS API URL.
 
+## Deploying with Docker
+
+The app ships as two containers, wired together by `docker-compose.yml`:
+
+- **api** — the ASP.NET Core API (Ubuntu-based .NET 8 runtime). SQLite lives on a named
+  volume (`restaurant-data`) so data survives restarts; migrations run and demo data is
+  seeded automatically on first start.
+- **web** — nginx serving the published Blazor WebAssembly app and reverse-proxying `/api`
+  to the api container. Because the browser talks to a single origin, there is no CORS to
+  configure and no API hostname to hard-code.
+
+On the VPS:
+
+```bash
+docker compose up -d --build
+```
+
+Then browse to `http://<vps-ip>:8080`. Only the web container publishes a port; the api is
+reachable only on the internal compose network. For production, terminate TLS with a reverse
+proxy (Caddy, Traefik, or nginx) in front of the web container, or map it to port 80/443.
+
+To build the images individually (build context is the repo root):
+
+```bash
+docker build -f RestaurantApp.Api/Dockerfile -t restaurantapp-api .
+docker build -f RestaurantApp.Web/Dockerfile -t restaurantapp-web .
+```
+
 ## Running the tests
 
 ```bash

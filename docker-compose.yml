@@ -1,0 +1,32 @@
+# Deploy the whole app with: docker compose up -d --build
+# The web container serves the Blazor UI and reverse-proxies /api to the API container,
+# so only the web port needs to be exposed on the VPS.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: RestaurantApp.Api/Dockerfile
+    image: restaurantapp-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Default: "Data Source=/app/data/restaurant.db"
+    volumes:
+      - restaurant-data:/app/data
+    restart: unless-stopped
+    expose:
+      - "8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: RestaurantApp.Web/Dockerfile
+    image: restaurantapp-web
+    ports:
+      - "8080:80"   # browse to http://<vps-ip>:8080  (put a TLS proxy in front for production)
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  restaurant-data:
