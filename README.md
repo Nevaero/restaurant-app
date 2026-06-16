@@ -20,6 +20,10 @@ The homepage is a card grid leading to the modules:
 
 Menu PDFs are generated server-side with **QuestPDF**.
 
+The UI uses a calm, professional **green + beige** theme with a sans-serif type stack —
+a low-fatigue palette suited to an all-day kitchen ERP, with a dark-green sidebar, warm
+beige surfaces and earthy semantic colours (sage, clay, terracotta).
+
 The UI is **bilingual (French / English)** with **French as the default**. A language switcher
 in the top bar flips the whole UI live (no reload) and remembers the choice in `localStorage`;
 the menu PDF is generated in the selected language too.
