@@ -7,12 +7,24 @@ namespace RestaurantApp.Infrastructure.Data;
 /// <summary>Seeds a realistic data set so every view (menus, recipes, inventory, planning) is populated.</summary>
 public static class DbInitializer
 {
-    // The EU's 14 major food allergens.
-    private static readonly string[] EuAllergens =
-    [
-        "Gluten", "Crustaceans", "Eggs", "Fish", "Peanuts", "Soybeans", "Milk",
-        "Nuts", "Celery", "Mustard", "Sesame", "Sulphites", "Lupin", "Molluscs"
-    ];
+    // The EU's 14 major food allergens (English key → French label stored in the DB).
+    private static readonly Dictionary<string, string> EuAllergens = new()
+    {
+        ["Gluten"] = "Gluten",
+        ["Crustaceans"] = "Crustacés",
+        ["Eggs"] = "Œufs",
+        ["Fish"] = "Poisson",
+        ["Peanuts"] = "Arachides",
+        ["Soybeans"] = "Soja",
+        ["Milk"] = "Lait",
+        ["Nuts"] = "Fruits à coque",
+        ["Celery"] = "Céleri",
+        ["Mustard"] = "Moutarde",
+        ["Sesame"] = "Sésame",
+        ["Sulphites"] = "Sulfites",
+        ["Lupin"] = "Lupin",
+        ["Molluscs"] = "Mollusques",
+    };
 
     public static async Task SeedAsync(AppDbContext db, CancellationToken ct = default)
     {
@@ -21,33 +33,33 @@ public static class DbInitializer
         if (await db.Allergens.AnyAsync(ct))
             return; // already seeded
 
-        // ── Allergens (normalized reference data) ───────────────────────────────
-        var a = EuAllergens.ToDictionary(name => name, name => new Allergen { Name = name });
+        // ── Allergens (normalized reference data; English keys, French names) ────
+        var a = EuAllergens.ToDictionary(kv => kv.Key, kv => new Allergen { Name = kv.Value });
         db.Allergens.AddRange(a.Values);
 
         // ── Inventory (a few items deliberately below threshold to show alerts) ──
-        var tomatoes  = new Ingredient { Name = "Tomatoes",    Quantity = 25m,  Unit = "kg",     LowStockThreshold = 5m };
-        var pasta     = new Ingredient { Name = "Pasta",       Quantity = 40m,  Unit = "kg",     LowStockThreshold = 10m, Allergens = [a["Gluten"]] };
-        var beef      = new Ingredient { Name = "Ground Beef", Quantity = 12m,  Unit = "kg",     LowStockThreshold = 4m };
-        var parmesan  = new Ingredient { Name = "Parmesan",    Quantity = 6m,   Unit = "kg",     LowStockThreshold = 2m,  Allergens = [a["Milk"]] };
-        var pesto     = new Ingredient { Name = "Pesto",       Quantity = 3m,   Unit = "liters", LowStockThreshold = 2m,  Allergens = [a["Milk"], a["Nuts"]] };
-        var eggs      = new Ingredient { Name = "Eggs",        Quantity = 200m, Unit = "units",  LowStockThreshold = 48m, Allergens = [a["Eggs"]] };
-        var flour     = new Ingredient { Name = "Flour",       Quantity = 30m,  Unit = "kg",     LowStockThreshold = 8m,  Allergens = [a["Gluten"]] };
-        var salmon    = new Ingredient { Name = "Salmon",      Quantity = 3m,   Unit = "kg",     LowStockThreshold = 5m,  Allergens = [a["Fish"]] };          // LOW
-        var shrimp    = new Ingredient { Name = "Shrimp",      Quantity = 1.5m, Unit = "kg",     LowStockThreshold = 3m,  Allergens = [a["Crustaceans"]] };   // LOW
-        var oliveOil  = new Ingredient { Name = "Olive Oil",   Quantity = 20m,  Unit = "liters", LowStockThreshold = 5m };
-        var rice      = new Ingredient { Name = "Rice",        Quantity = 25m,  Unit = "kg",     LowStockThreshold = 8m };
-        var butter    = new Ingredient { Name = "Butter",      Quantity = 4m,   Unit = "kg",     LowStockThreshold = 5m,  Allergens = [a["Milk"]] };          // LOW
-        var lettuce   = new Ingredient { Name = "Lettuce",     Quantity = 8m,   Unit = "kg",     LowStockThreshold = 3m };
-        var basil     = new Ingredient { Name = "Basil",       Quantity = 2m,   Unit = "kg",     LowStockThreshold = 1m };
+        var tomatoes  = new Ingredient { Name = "Tomates",       Quantity = 25m,  Unit = "kg",     LowStockThreshold = 5m };
+        var pasta     = new Ingredient { Name = "Pâtes",         Quantity = 40m,  Unit = "kg",     LowStockThreshold = 10m, Allergens = [a["Gluten"]] };
+        var beef      = new Ingredient { Name = "Bœuf haché",    Quantity = 12m,  Unit = "kg",     LowStockThreshold = 4m };
+        var parmesan  = new Ingredient { Name = "Parmesan",      Quantity = 6m,   Unit = "kg",     LowStockThreshold = 2m,  Allergens = [a["Milk"]] };
+        var pesto     = new Ingredient { Name = "Pesto",         Quantity = 3m,   Unit = "litres", LowStockThreshold = 2m,  Allergens = [a["Milk"], a["Nuts"]] };
+        var eggs      = new Ingredient { Name = "Œufs",          Quantity = 200m, Unit = "unités", LowStockThreshold = 48m, Allergens = [a["Eggs"]] };
+        var flour     = new Ingredient { Name = "Farine",        Quantity = 30m,  Unit = "kg",     LowStockThreshold = 8m,  Allergens = [a["Gluten"]] };
+        var salmon    = new Ingredient { Name = "Saumon",        Quantity = 3m,   Unit = "kg",     LowStockThreshold = 5m,  Allergens = [a["Fish"]] };          // LOW
+        var shrimp    = new Ingredient { Name = "Crevettes",     Quantity = 1.5m, Unit = "kg",     LowStockThreshold = 3m,  Allergens = [a["Crustaceans"]] };   // LOW
+        var oliveOil  = new Ingredient { Name = "Huile d'olive", Quantity = 20m,  Unit = "litres", LowStockThreshold = 5m };
+        var rice      = new Ingredient { Name = "Riz",           Quantity = 25m,  Unit = "kg",     LowStockThreshold = 8m };
+        var butter    = new Ingredient { Name = "Beurre",        Quantity = 4m,   Unit = "kg",     LowStockThreshold = 5m,  Allergens = [a["Milk"]] };          // LOW
+        var lettuce   = new Ingredient { Name = "Laitue",        Quantity = 8m,   Unit = "kg",     LowStockThreshold = 3m };
+        var basil     = new Ingredient { Name = "Basilic",       Quantity = 2m,   Unit = "kg",     LowStockThreshold = 1m };
         db.Ingredients.AddRange(tomatoes, pasta, beef, parmesan, pesto, eggs, flour,
             salmon, shrimp, oliveOil, rice, butter, lettuce, basil);
 
         // ── Recipes (built from inventory; allergens roll up automatically) ──────
         var bolognese = new Recipe
         {
-            Name = "Pasta Bolognese", Servings = 4,
-            Instructions = "Brown the beef, add tomatoes, simmer 30 min, serve over pasta with parmesan.",
+            Name = "Pâtes à la bolognaise", Servings = 4,
+            Instructions = "Faire revenir le bœuf, ajouter les tomates, laisser mijoter 30 min, servir sur les pâtes avec du parmesan.",
             Ingredients =
             [
                 new RecipeIngredient { Ingredient = pasta,    Quantity = 0.5m },
@@ -58,8 +70,8 @@ public static class DbInitializer
         };
         var pestoPasta = new Recipe
         {
-            Name = "Pesto Pasta", Servings = 4,
-            Instructions = "Cook pasta, toss with pesto, top with parmesan.",
+            Name = "Pâtes au pesto", Servings = 4,
+            Instructions = "Cuire les pâtes, mélanger au pesto, parsemer de parmesan.",
             Ingredients =
             [
                 new RecipeIngredient { Ingredient = pasta,    Quantity = 0.5m },
@@ -69,8 +81,8 @@ public static class DbInitializer
         };
         var grilledSalmon = new Recipe
         {
-            Name = "Grilled Salmon", Servings = 2,
-            Instructions = "Season salmon, grill 4 min per side, serve with dressed lettuce.",
+            Name = "Saumon grillé", Servings = 2,
+            Instructions = "Assaisonner le saumon, griller 4 min de chaque côté, servir avec une laitue assaisonnée.",
             Ingredients =
             [
                 new RecipeIngredient { Ingredient = salmon,   Quantity = 0.4m },
@@ -80,8 +92,8 @@ public static class DbInitializer
         };
         var shrimpRisotto = new Recipe
         {
-            Name = "Shrimp Risotto", Servings = 4,
-            Instructions = "Toast rice, add stock gradually, fold in shrimp, butter and parmesan.",
+            Name = "Risotto aux crevettes", Servings = 4,
+            Instructions = "Nacrer le riz, ajouter le bouillon progressivement, incorporer les crevettes, le beurre et le parmesan.",
             Ingredients =
             [
                 new RecipeIngredient { Ingredient = rice,     Quantity = 0.4m },
@@ -92,8 +104,8 @@ public static class DbInitializer
         };
         var caprese = new Recipe
         {
-            Name = "Caprese Salad", Servings = 2,
-            Instructions = "Slice tomatoes, layer with parmesan shavings and basil, drizzle with oil.",
+            Name = "Salade caprese", Servings = 2,
+            Instructions = "Trancher les tomates, alterner avec des copeaux de parmesan et du basilic, arroser d'huile d'olive.",
             Ingredients =
             [
                 new RecipeIngredient { Ingredient = tomatoes, Quantity = 0.3m },
@@ -103,8 +115,8 @@ public static class DbInitializer
         };
         var omelette = new Recipe
         {
-            Name = "Cheese Omelette", Servings = 1,
-            Instructions = "Beat eggs, cook in butter, fold with parmesan.",
+            Name = "Omelette au fromage", Servings = 1,
+            Instructions = "Battre les œufs, cuire au beurre, replier avec le parmesan.",
             Ingredients =
             [
                 new RecipeIngredient { Ingredient = eggs,     Quantity = 3m },
@@ -120,9 +132,9 @@ public static class DbInitializer
         // ── Menus (recipes placed across the week so the grid/PDF is full) ───────
         db.Menus.Add(new Menu
         {
-            Name = "Spring lunch menu", WeekStart = thisMonday,
-            Content = "House specials, served 11:30–14:00.",
-            NutritionalInfo = "Avg. 750 kcal/serving · 35 g protein · 28 g fat · 80 g carbs",
+            Name = "Menu de printemps", WeekStart = thisMonday,
+            Content = "Plats du jour, servis de 11h30 à 14h00.",
+            NutritionalInfo = "Moy. 750 kcal/portion · 35 g protéines · 28 g lipides · 80 g glucides",
             MenuRecipes =
             [
                 new MenuRecipe { Recipe = bolognese,     Day = 0 },
@@ -134,9 +146,9 @@ public static class DbInitializer
         });
         db.Menus.Add(new Menu
         {
-            Name = "Previous week", WeekStart = thisMonday.AddDays(-7),
-            Content = "Rotating seasonal dishes.",
-            NutritionalInfo = "Avg. 720 kcal/serving",
+            Name = "Semaine précédente", WeekStart = thisMonday.AddDays(-7),
+            Content = "Plats de saison en rotation.",
+            NutritionalInfo = "Moy. 720 kcal/portion",
             MenuRecipes =
             [
                 new MenuRecipe { Recipe = omelette,   Day = 0 },
@@ -146,13 +158,13 @@ public static class DbInitializer
         });
         db.Menus.Add(new Menu
         {
-            Name = "Next week (draft)", WeekStart = thisMonday.AddDays(7),
-            Content = "Draft — to be confirmed.",
+            Name = "Semaine prochaine (brouillon)", WeekStart = thisMonday.AddDays(7),
+            Content = "Brouillon — à confirmer.",
             NutritionalInfo = "",
             MenuRecipes = [new MenuRecipe { Recipe = pestoPasta, Day = 0 }],
         });
 
-        // ── Staff ────────────────────────────────────────────────────────────────
+        // ── Staff (roles kept as English values; the UI localizes them) ──────────
         var alice = new Employee { FirstName = "Alice", LastName = "Müller", Role = "Cook",    HourlyRate = 34.50m };
         var bruno = new Employee { FirstName = "Bruno", LastName = "Rossi",  Role = "Clerk",   HourlyRate = 27.00m };
         var carla = new Employee { FirstName = "Carla", LastName = "Weber",  Role = "Manager", HourlyRate = 45.00m };
@@ -174,11 +186,11 @@ public static class DbInitializer
                 });
         }
 
-        AddShifts(alice, 0, 5, 8, 16, "Opening shift");  // Mon–Sat, 48h → overtime
-        AddShifts(bruno, 0, 4, 14, 22);                   // Mon–Fri, 40h
-        AddShifts(david, 1, 5, 10, 18);                   // Tue–Sat, 40h
-        AddShifts(elena, 2, 6, 16, 22);                   // Wed–Sun, 30h
-        db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday,           StartTime = new(9, 0), EndTime = new(17, 0), Notes = "Weekly planning" });
+        AddShifts(alice, 0, 5, 8, 16, "Ouverture");  // Mon–Sat, 48h → overtime
+        AddShifts(bruno, 0, 4, 14, 22);               // Mon–Fri, 40h
+        AddShifts(david, 1, 5, 10, 18);               // Tue–Sat, 40h
+        AddShifts(elena, 2, 6, 16, 22);               // Wed–Sun, 30h
+        db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday,           StartTime = new(9, 0), EndTime = new(17, 0), Notes = "Planification hebdomadaire" });
         db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday.AddDays(2), StartTime = new(9, 0), EndTime = new(17, 0) });
         db.Shifts.Add(new Shift { Employee = carla, Date = thisMonday.AddDays(4), StartTime = new(9, 0), EndTime = new(17, 0) });
 
